@@ -1,0 +1,18 @@
+configuration:
+  default_reader:
+    name: Standard-Leser
+    description: >-
+      Womit neue Karten eingelesen werden. "local" ist kostenlos und läuft auf deinem Home Assistant,
+      "claude" nutzt deinen eigenen Anthropic-API-Schlüssel. In der App lässt sich das pro Karte umschalten.
+  anthropic_api_key:
+    name: Anthropic-API-Schlüssel
+    description: >-
+      Optional. Schlüssel von console.anthropic.com (beginnt mit sk-ant-). Ein claude.ai-Abo enthält
+      keinen API-Zugang; die API wird getrennt nach Verbrauch abgerechnet.
+  claude_model:
+    name: Claude-Modell
+    description: >-
+      claude-opus-5-5 liest am genauesten, claude-sonnet-5-5 ist günstiger, claude-haiku-5-5 am günstigsten.
+  ocr_language:
+    name: Sprache der Texterkennung
+    description: Sprache(n) für den kostenlosen Leser.

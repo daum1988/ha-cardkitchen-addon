@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+/data/
+*.db
+# Eigene Rezepte und Karten gehören nie ins Repo
+*.json.bak
+kartenkueche-rezepte*.json
+cards/

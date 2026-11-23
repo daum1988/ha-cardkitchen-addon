@@ -1,0 +1,189 @@
+{
+ "source": "https://github.com/Schischu/hello_fresh_gewuerze",
+ "license": "GPL-3.0",
+ "spices": [
+  {
+   "name": "Hello Aloha",
+   "ingredients": "Speisesalz, Zucker, Mangopulver (Mango, Maltodextrin), Curcuma, Rosmarin gemahlen, Kreuzkümmel, Basilikum gerebelt, Zitronenschalengranulat (Zucker, Weizenstärke, Zitronenschalengranulat, Aromaextrakte), Chili",
+   "alternative": {
+    "name": "Spicebar Südseetraum",
+    "url": "https://www.spicebar.de/sudseetraum-bio"
+   }
+  },
+  {
+   "name": "Hello Baharat",
+   "ingredients": "Gewürze (Paprika, Pfeffer (schwarz), Schwarzkümmel, Koriander, Knoblauch, Chili, Piment, Macis, Anis, Kardamom, Nelke), Speisesalz",
+   "alternative": null
+  },
+  {
+   "name": "Hello Buon Appetito (Hello Mediterraneo)",
+   "ingredients": "Tomaten, Speisesalz, Kräuter (Rosmarin, Oregano, Basilikum, Thymian), Gewürze (Zwiebeln, Chili, Knoblauch), Butterpilzpulver",
+   "alternative": {
+    "name": "Spicebar Hello Mediterraneo",
+    "url": "https://www.spicebar.de/gewuerze/gewuerzmischungen/hello-mediterraneo-bio"
+   }
+  },
+  {
+   "name": "Hello Cajun",
+   "ingredients": "Gewürze (Paprika, Chili, Koriander, Pfeffer, Fenchel), Speisesalz, Gemüse getrocknet (Knoblauch, Zwiebeln), Kräuter getrocknet (Thymian, Oregano), Paprikaextrakt",
+   "alternative": null
+  },
+  {
+   "name": "Hello Curry",
+   "ingredients": "Gewürze (Koriander, Curcuma, Bockshornkleesaat, Kreuzkümmel, Muskat), Paprikaextrakt",
+   "alternative": {
+    "name": "Just Spices Curry Madras",
+    "url": "https://www.justspices.de/curry-madras.html?queryID=&objectID=3405&indexName=js_live_dedefault_products"
+   }
+  },
+  {
+   "name": "Hello Dukkah",
+   "ingredients": "Speisesalz, Sesam, Speise-Meersalz, Kreuzkümmel, Koriander, Lorbeerblätter gemahlen, Pfeffer, Kardamom, Nelken, Muskatblüte gemahlen, Chili, Senf, Zimt",
+   "alternative": null
+  },
+  {
+   "name": "Hello Fajita",
+   "ingredients": "",
+   "alternative": null
+  },
+  {
+   "name": "Hello Fiesta",
+   "ingredients": "Paprika, Kumin, Knoblauch, Piment, Zimt, Chili, Meersalz, Tomatenpulver",
+   "alternative": {
+    "name": "Spicebar Hello Mexico",
+    "url": "https://www.spicebar.de/hello-mexico-bio"
+   }
+  },
+  {
+   "name": "Hello Grünzeug",
+   "ingredients": "Süßungsmittel Erythrit (24%), Zwiebel, Thymian, Chili mild, Amchur, Salz, Kressesaat, Basilikum, Schnittlauch",
+   "alternative": {
+    "name": "Spicebar Grünzeugzeugs",
+    "url": "https://www.spicebar.de/paulikocht-grunzeugzeugs-bio"
+   }
+  },
+  {
+   "name": "Hello Harissa",
+   "ingredients": "Chili, Paprika, Kumin, Knoblauch, Koriander, Piment, Meersalz",
+   "alternative": {
+    "name": "Spicebar Harissa Bio",
+    "url": "https://www.spicebar.de/harissa-bio"
+   }
+  },
+  {
+   "name": "Hello Kokos Curry",
+   "ingredients": "Speisesalz, Zucker, Gewürze (Bockshornklee, Chili, Kreuzkümmel, Kardamom, Nelken), 10% Kokosraspel",
+   "alternative": null
+  },
+  {
+   "name": "Hello Mezze",
+   "ingredients": "Tomatengranulat, Knoblauchgranulat, Kreuzkümmel, Chili",
+   "alternative": {
+    "name": "Boomers Gourmet Harissa Gewürzmischung",
+    "url": "https://www.amazon.de/gp/product/B08SK7ZJJW/"
+   }
+  },
+  {
+   "name": "Hello Muskat",
+   "ingredients": "Speisesalz, Würze, Gewürze (Zwiebel, Lauch, Muskatnuss, Sellerie, Pastinake, Knoblauch, Kurkuma, Liebstockwurzel), Maltodextrin, Karottenpulver, Karotten, Kräuter (Petersilie)",
+   "alternative": {
+    "name": "Boomers Gourmet Chimichurry Gewürzmischung",
+    "url": "https://www.amazon.de/gp/product/B08VNBDZRD/"
+   }
+  },
+  {
+   "name": "Hello Paprika",
+   "ingredients": "Paprika, Knoblauch, Pfeffer (schwarz), Zwiebel, Speisesalz, Toastzwiebelpulver, Tomaten, Tomatenpulver",
+   "alternative": {
+    "name": "Spicebar Tinas Tomatiges",
+    "url": "https://www.spicebar.de/tinas-tomatiges-bio"
+   }
+  },
+  {
+   "name": "Hello Patatas",
+   "ingredients": "Speisesalz, Paprika, Curcuma, Kreuzkümmel, Muskat, Zwiebelgranulat",
+   "alternative": null
+  },
+  {
+   "name": "Hello Piri Piri",
+   "ingredients": "Gewürze (Paprika, Ingwer, Pfeffer (schwarz), Koriander, Knoblauch, Zwiebel, Chili), Speisesalz, Zucker, geräucherte Paprika, Orange, Kräuter (Majoran)",
+   "alternative": {
+    "name": "Boomers Gourmet Pul Biber Gewürzmischung",
+    "url": "https://www.amazon.de/gp/product/B08SL8W97R/"
+   }
+  },
+  {
+   "name": "Hello Shakshuka",
+   "ingredients": "Gewürze (Paprika, Chili, Koriander, Curcuma, Kreuzkümmel), Gemüse getrocknet (Zwiebel, Knoblauch), Speisesalz, Gewürzextrakte, Schwefeldioxid",
+   "alternative": null
+  },
+  {
+   "name": "Hello Smokey",
+   "ingredients": "Gewürze (Paprika, Pfeffer (schwarz), Senfmehl), geräucherte Paprika, Zucker, Rauchsalz (Speisesalz, Rauch), Speisesalz",
+   "alternative": null
+  },
+  {
+   "name": "Hello Smoky Paprika",
+   "ingredients": "Speisesalz, Gewürze (Paprika, Pfeffer, Senfmehl, Chili), Zucker, Raucharoma",
+   "alternative": null
+  },
+  {
+   "name": "Hello Souflaki",
+   "ingredients": "Knoblauch, Oregano, Tomaten, Chili mild, Cayennepfeffer",
+   "alternative": null
+  },
+  {
+   "name": "Hello Südseetraum",
+   "ingredients": "Gewürzzubereitung mit 23% Vollrohrzucker; Kalahari Wüstensalz, Vollrohrzucker, Mango, Kurkuma, Rosmarin, Kreuzkümmel, Zitronenschalen, Basilikum, Chili, Fenchel",
+   "alternative": null
+  },
+  {
+   "name": "Hello Umami",
+   "ingredients": "Salz, Kokosblütenzucker, Tomate, Sumach, Knoblauch, Paprika, Zwiebel, Rauchsalz, Steinpilz, Lauch",
+   "alternative": {
+    "name": "Spicebar Umami-Bums",
+    "url": "https://www.spicebar.de/umami-bums-bio"
+   }
+  },
+  {
+   "name": "Smoky BBQ",
+   "ingredients": "",
+   "alternative": {
+    "name": "Spicebar Smoky BBQ",
+    "url": "https://www.spicebar.de/smoky-bbq-pfeffermischung"
+   }
+  },
+  {
+   "name": "Gewürzmischung 5 Gewürzpulver",
+   "ingredients": "Zimt, Pfeffer (schwarz), Fenchel, Sternanis, Nelke",
+   "alternative": null
+  },
+  {
+   "name": "Gewürzmischung Desserttraum",
+   "ingredients": "Rohrohrzucker, Vollrohrzucker, Kokosblütenzucker, Tonkabohnen, Bourbon-Vanille-Pulver",
+   "alternative": null
+  },
+  {
+   "name": "Gewürzmischung Paprikagewürz",
+   "ingredients": "Speisesalz, Gewürze (Paprika, Pfeffer, Schwarzkümmel), Gemüse getrocknet (Zwiebeln, Knoblauch, Tomaten)",
+   "alternative": null
+  },
+  {
+   "name": "Gewürzmischung Madras Curry",
+   "ingredients": "Kurkuma, Senf gelb, Koriandersamen, Kreuzkümmelsamen, Paprika rot edelsüß, Fenchelsamen grün, Chili mild, Ingwer, Zimt Ceylon, Zwiebelgranulat, Knoblauch",
+   "alternative": null
+  },
+  {
+   "name": "Gewürzmischung Muskat (?)",
+   "ingredients": "Speisesalz, Gemüse getrocknet (Lauch, Pastinaken, Karotten, Champignon, Sellerieknolle, Zwiebeln, Tomaten), Sonnenblumenöl, Maltodextrin, Gewürze (Muskat, Curcuma), Kräuter getrocknet",
+   "alternative": null,
+   "note": "vgl. oben Hello Muskat"
+  },
+  {
+   "name": "Gewürzmischung Souflaki (Bio)",
+   "ingredients": "Knoblauch, Oregano, Tomaten, Chili mild, Cayenne Pfeffer, Paprika",
+   "alternative": null,
+   "note": "von Spicebar Gewürzküche"
+  }
+ ]
+}

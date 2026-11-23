@@ -1,0 +1,8 @@
+build_from:
+  amd64: ghcr.io/home-assistant/amd64-base-python:3.13-alpine3.23-2026.10.3
+  aarch64: ghcr.io/home-assistant/aarch64-base-python:3.13-alpine3.23-2026.10.3
+labels:
+  org.opencontainers.image.title: "Kartenküche"
+  org.opencontainers.image.description: "Rezeptkarten einlesen und Wochenpläne erstellen"
+  org.opencontainers.image.source: "https://github.com/daum1988/ha-cardkitchen-addon"
+  org.opencontainers.image.licenses: "GPL-3.0-only"

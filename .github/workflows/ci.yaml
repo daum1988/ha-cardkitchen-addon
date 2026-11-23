@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    name: Add-on-Linter
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: frenck/action-addon-linter@v2
+        with:
+          path: "./cardkitchen"
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: sudo apt-get update && sudo apt-get install -y tesseract-ocr tesseract-ocr-deu poppler-utils
+      - run: pip install -r cardkitchen/requirements.txt pytest httpx
+      - run: pytest -q tests
+
+  build:
+    name: Docker-Build (amd64)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: |
+          BASE=$(grep 'amd64:' cardkitchen/build.yaml | awk '{print $2}')
+          docker build --build-arg BUILD_FROM="$BASE" -t cardkitchen:ci cardkitchen

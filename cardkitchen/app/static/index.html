@@ -1,0 +1,722 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Kartenküche</title>
+<style>
+:root{color-scheme:light}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font:14px/1.5 system-ui,sans-serif}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<style>
+/* Layout: Wochenplan als Kartenstapel – Vorlieben links, Tage rechts; Tabs oben, auf dem Handy eine Spalte */
+:root{
+  --bg:#F3F6F1; --surface:#FFFFFF; --surface-2:#E8EEE5; --line:#D3DCCF;
+  --fg:#18231C; --muted:#5B6B60; --accent:#2E7A4E; --accent-ink:#FFFFFF; --accent-soft:#DCEEDF;
+  --saffron:#C98A12; --saffron-soft:#FBEFD2; --chili:#B8432F; --chili-soft:#F7E1DB;
+  --hf:#5C9B1E; --ms:#1F1F1F; --dn:#D2492A;
+  --f-display:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --f-body:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --f-mono:ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --r:12px; --shadow:0 1px 2px rgba(24,35,28,.06),0 4px 14px rgba(24,35,28,.06);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111612; --surface:#1A211C; --surface-2:#222B25; --line:#2F3A32;
+  --fg:#E5ECE6; --muted:#9AAA9F; --accent:#6CC08C; --accent-ink:#0E1510; --accent-soft:#1F3427;
+  --saffron:#F0BC4E; --saffron-soft:#3A2F15; --chili:#F0846F; --chili-soft:#3D221D;
+  --hf:#8BC34A; --ms:#E5ECE6; --dn:#F0846F; --shadow:0 1px 2px rgba(0,0,0,.3);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111612; --surface:#1A211C; --surface-2:#222B25; --line:#2F3A32;
+  --fg:#E5ECE6; --muted:#9AAA9F; --accent:#6CC08C; --accent-ink:#0E1510; --accent-soft:#1F3427;
+  --saffron:#F0BC4E; --saffron-soft:#3A2F15; --chili:#F0846F; --chili-soft:#3D221D;
+  --hf:#8BC34A; --ms:#E5ECE6; --dn:#F0846F; --shadow:0 1px 2px rgba(0,0,0,.3);
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1140px;margin:0 auto}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.eyebrow{font-size:11.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600}
+
+/* header */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);margin:0 calc(-1*max(16px,env(safe-area-inset-left,0px))) 0;padding:12px max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px))}
+.brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.brand h1{font-size:26px;font-weight:800}
+.brand h1 span{color:var(--accent)}
+.status{font-size:12.5px;color:var(--muted)}
+nav.tabs{display:flex;gap:4px;margin-top:8px;overflow-x:auto}
+nav.tabs a{padding:9px 14px;border-radius:10px 10px 0 0;text-decoration:none;color:var(--muted);font-weight:600;white-space:nowrap;border:1px solid transparent;border-bottom:none}
+nav.tabs a[aria-current="page"]{color:var(--fg);background:var(--surface);border-color:var(--line);margin-bottom:-1px}
+nav.tabs .count{font-family:var(--f-mono);font-size:12px;color:var(--muted);margin-left:4px}
+
+main{padding-top:20px}
+.view[hidden]{display:none!important}
+
+/* buttons & chips */
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);padding:8px 14px;border-radius:999px;cursor:pointer;font-weight:600;font-size:14px;text-decoration:none;color:var(--fg)}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.ghost{background:transparent}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn.danger{color:var(--chili)}
+.btn:disabled{opacity:.5;cursor:default}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 10px;font-size:13px;cursor:pointer;user-select:none}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--fg)}
+.chip.neg[aria-pressed="true"]{background:var(--chili-soft);border-color:var(--chili)}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:6px;background:var(--surface-2);color:var(--muted)}
+.prov{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600}
+.prov::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.prov.hf::before{background:var(--hf)} .prov.ms::before{background:var(--ms)} .prov.dn::before{background:var(--dn)}
+
+/* plan layout */
+.planGrid{display:grid;grid-template-columns:300px minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:880px){.planGrid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.prefs{display:grid;gap:16px}
+.prefs details summary{cursor:pointer;font-weight:600}
+.field{display:grid;gap:6px}
+.field>label,.field>.lbl{font-size:13px;font-weight:600}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.stepper button{border:none;background:transparent;width:34px;height:32px;cursor:pointer;font-size:18px}
+.stepper output{min-width:28px;text-align:center;font-family:var(--f-mono)}
+select,input[type=text],input[type=number],input[type=search],textarea{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 10px;width:100%}
+textarea{min-height:90px;resize:vertical}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.days{display:flex;gap:4px;flex-wrap:wrap}
+.days .chip{width:38px;text-align:center;padding:5px 0;font-weight:600}
+
+.weekHead{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.weekHead h2{font-size:24px}
+.summary{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:16px}
+.summary div{display:grid}
+.summary b{font-family:var(--f-display);font-size:22px}
+.dayList{display:grid;gap:10px}
+.dayCard{display:grid;grid-template-columns:58px minmax(0,1fr);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.dayCard.cooked{opacity:.62}
+.dayLabel{background:var(--surface-2);display:grid;place-content:center;text-align:center;padding:10px 4px}
+.dayLabel b{font-family:var(--f-display);font-size:20px}
+.dayLabel span{font-size:11px;color:var(--muted)}
+.dayBody{padding:12px 14px;display:grid;gap:8px;min-width:0}
+.dayBody h3{font-size:17px;cursor:pointer}
+.dayBody h3:hover{color:var(--accent)}
+.meta{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--muted)}
+.shared{display:flex;gap:6px;flex-wrap:wrap}
+.share{font-size:12px;background:var(--saffron-soft);color:var(--fg);border-radius:6px;padding:2px 8px}
+.share b{color:var(--saffron);font-weight:600}
+.dayActions{display:flex;gap:6px;flex-wrap:wrap}
+.dayActions .on{background:var(--accent-soft);border-color:var(--accent)}
+.empty{border:1.5px dashed var(--line);border-radius:var(--r);padding:28px;text-align:center;color:var(--muted);display:grid;gap:10px;justify-items:center}
+.note{background:var(--saffron-soft);border-radius:10px;padding:10px 12px;font-size:14px}
+.note.err{background:var(--chili-soft)}
+
+.radar{margin-top:22px}
+.radar h3{font-size:18px;margin-bottom:8px}
+.radar ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.radar li{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:3px}
+
+/* shopping */
+.shopHead{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:end;margin-bottom:16px}
+.aisles{columns:2 340px;column-gap:24px}
+.aisle{break-inside:avoid;margin-bottom:18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.aisle h3{font-size:15px;margin-bottom:6px;display:flex;justify-content:space-between}
+.item{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:8px;align-items:start;padding:6px 0;border-top:1px solid var(--line)}
+.item:first-of-type{border-top:none}
+.item input{margin-top:3px;accent-color:var(--accent);width:16px;height:16px}
+.item.done .nm{text-decoration:line-through;color:var(--muted)}
+.item .qty{font-family:var(--f-mono);font-size:13.5px;text-align:right;white-space:nowrap}
+.item .sub{font-size:12px;color:var(--muted)}
+.spiceInfo{font-size:12px;background:var(--surface-2);border-radius:8px;padding:6px 8px;margin-top:4px}
+
+/* recipes */
+.toolbar{display:grid;gap:10px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.rcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:grid;gap:8px;cursor:pointer;text-align:left}
+.rcard:hover{border-color:var(--accent)}
+.rcard h3{font-size:16px}
+.rcard .sub{font-size:13px;color:var(--muted)}
+.badge{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:6px;background:var(--saffron-soft);color:var(--fg)}
+.chip:disabled{opacity:.45;cursor:default}
+
+/* dialog */
+dialog{border:none;border-radius:16px;padding:0;max-width:720px;width:calc(100% - 24px);background:var(--surface);color:var(--fg);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+dialog::backdrop{background:rgba(10,15,12,.5)}
+.dlg{padding:20px;display:grid;gap:14px;max-height:85vh;overflow:auto}
+.dlgHead{display:flex;justify-content:space-between;gap:12px;align-items:start}
+.dlgHead h2{font-size:22px}
+.ings{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;font-size:14px}
+.ings .q{font-family:var(--f-mono);text-align:right;color:var(--muted)}
+.ings .pan{color:var(--muted)}
+ol.steps{margin:0;padding-left:20px;display:grid;gap:8px}
+ol.steps b{display:block}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:560px){.two{grid-template-columns:1fr}}
+
+/* import */
+.drop{border:2px dashed var(--line);border-radius:16px;padding:32px 16px;text-align:center;display:grid;gap:10px;justify-items:center;background:var(--surface)}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop h2{font-size:20px}
+.queue{display:grid;gap:8px;margin-top:14px}
+.qitem{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;align-items:center}
+.qitem .st{font-size:13px}
+.qitem .st.ok{color:var(--accent)} .qitem .st.err{color:var(--chili)}
+.sections{display:grid;gap:18px;margin-top:22px}
+.sections h3{font-size:17px;margin-bottom:6px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion:no-preference){.dayCard,.rcard{transition:border-color .15s}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><h1>Karten<span>küche</span></h1><span class="status" id="status">Lade Rezepte …</span></div>
+    <nav class="tabs" aria-label="Bereiche">
+      <a href="#woche" data-view="woche">Wochenplan</a>
+      <a href="#einkauf" data-view="einkauf">Einkaufszettel<span class="count" id="cntShop"></span></a>
+      <a href="#rezepte" data-view="rezepte">Rezepte<span class="count" id="cntRec"></span></a>
+      <a href="#import" data-view="import">Karten einlesen</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- WOCHE -->
+  <section class="view" id="v-woche">
+    <div class="planGrid">
+      <aside class="panel prefs" aria-label="Vorlieben">
+        <div><div class="eyebrow">Diese Woche</div><h2 style="font-size:19px">Vorlieben</h2></div>
+        <div class="field"><span class="lbl">Kochtage <span class="muted" id="dishCount"></span></span><div class="days" id="pDays"></div></div>
+        <div class="field"><span class="lbl">Portionen pro Gericht</span><div class="stepper" id="pPortions"><button type="button" aria-label="weniger">−</button><output>2</output><button type="button" aria-label="mehr">+</button></div></div>
+        <div class="field"><label for="pTime">Maximale Kochzeit</label>
+          <select id="pTime"><option value="0">egal</option><option value="25">bis 25 min</option><option value="30">bis 30 min</option><option value="40">bis 40 min</option><option value="50">bis 50 min</option></select></div>
+        <div class="field"><span class="lbl">Lust auf</span><div class="chips" id="pBoost"></div></div>
+        <div class="field"><span class="lbl">Hauptzutat (abwählen = ausschließen)</span><div class="chips" id="pProtein"></div></div>
+        <div class="field"><span class="lbl">Mindestens vegetarisch</span><div class="stepper" id="pVeg"><button type="button" aria-label="weniger">−</button><output>0</output><button type="button" aria-label="mehr">+</button></div></div>
+        <div class="field"><label for="pRest">Reste verwerten <span class="muted small" id="pRestLbl"></span></label><input type="range" id="pRest" min="0" max="2" step="1" value="1"></div>
+        <details>
+          <summary>Mehr Filter</summary>
+          <div class="prefs" style="margin-top:12px">
+            <div class="field"><span class="lbl">Nicht diese Woche</span><div class="chips" id="pExclude"></div></div>
+            <div class="field"><label for="pAvoidIng">Zutaten vermeiden (Komma-getrennt)</label><input type="text" id="pAvoidIng" placeholder="z. B. Pilze, Koriander"></div>
+            <div class="field"><span class="lbl">Allergene vermeiden</span><div class="chips" id="pAllergen"></div></div>
+            <div class="field"><label for="pKcal">Max. kcal pro Portion</label><input type="number" id="pKcal" min="0" step="50" placeholder="egal"></div>
+            <label class="row small" for="pReview"><input type="checkbox" id="pReview" style="width:auto"> Ungeprüfte Rezepte mit einplanen</label>
+            <div class="field"><label for="pRecent">Kürzlich Gekochtes pausieren</label>
+              <select id="pRecent"><option value="0">nein</option><option value="2">2 Wochen</option><option value="4">4 Wochen</option><option value="8">8 Wochen</option></select></div>
+          </div>
+        </details>
+        <button class="btn primary" id="btnPlan" type="button" style="justify-content:center">Woche planen</button>
+      </aside>
+
+      <div style="min-width:0">
+        <div class="weekHead">
+          <div><div class="eyebrow" id="weekLbl">Wochenplan</div><h2 id="weekTitle">Noch kein Plan</h2></div>
+          <div class="row"><button class="btn sm" id="btnReroll" type="button">Neuer Vorschlag</button><a class="btn sm" href="#einkauf">Zum Einkaufszettel</a></div>
+        </div>
+        <div class="summary" id="summary"></div>
+        <div id="planNote"></div>
+        <div class="dayList" id="dayList"></div>
+        <div class="radar" id="radar"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EINKAUF -->
+  <section class="view" id="v-einkauf" hidden>
+    <div class="shopHead">
+      <div><div class="eyebrow" id="shopLbl">Einkaufszettel</div><h2 style="font-size:24px">Für <span id="shopDishes">0</span> Gerichte</h2></div>
+      <div class="row"><button class="btn sm" id="btnCopy" type="button">Als Text kopieren</button><button class="btn sm ghost" id="btnUncheck" type="button">Haken zurücksetzen</button></div>
+    </div>
+    <div class="row" id="haRow" hidden style="margin-bottom:14px"><label for="haList" class="small" style="font-weight:600">Home Assistant</label><select id="haList" style="width:auto;min-width:200px"></select><button class="btn sm" id="btnHa" type="button">Offene Posten senden</button></div>
+    <textarea id="copyFallback" hidden readonly aria-label="Einkaufszettel als Text"></textarea>
+    <div id="shopBody"></div>
+  </section>
+
+  <!-- REZEPTE -->
+  <section class="view" id="v-rezepte" hidden>
+    <div class="toolbar">
+      <div class="row"><input type="search" id="q" placeholder="Rezept oder Zutat suchen …" style="flex:1;min-width:200px" aria-label="Suche"><button class="btn sm" id="btnNew" type="button">Rezept manuell anlegen</button></div>
+      <div class="chips" id="fChips"></div>
+    </div>
+    <div class="grid" id="recGrid"></div>
+  </section>
+
+  <!-- IMPORT -->
+  <section class="view" id="v-import" hidden>
+    <div class="row" style="margin-bottom:10px"><span class="small" style="font-weight:600">Einlesen mit</span><div class="chips" id="readerPick"></div></div>
+    <label class="drop" id="drop" for="fileIn">
+      <h2>Rezeptkarten hier ablegen</h2>
+      <span class="muted">PDF-Scans, PDFs oder Fotos (JPG/PNG) von HelloFresh, Marley Spoon, Dinnerly. Mehrere Dateien gleichzeitig gehen.</span>
+      <span class="btn primary">Dateien auswählen</span>
+      <input type="file" id="fileIn" multiple accept=".pdf,image/jpeg,image/png,image/webp,.heic" hidden>
+    </label>
+    <div id="importNote" class="small muted" style="margin-top:8px"></div>
+    <div class="panel" style="margin-top:14px;display:grid;gap:8px">
+      <h3 style="font-size:17px">Rezept aus anderer Quelle einfügen</h3>
+      <p class="small muted" style="margin:0">Rezepttext von einer Webseite (z. B. HelloFresh online, Chefkoch, ein Blog), aus einer Mail oder einem Chat kopieren und hier einfügen. Zutaten am besten eine pro Zeile mit Menge vorne. Kochbuchseiten fotografierst du einfach und legst das Foto oben ab.</p>
+      <div class="two"><div class="field"><label for="pasteSrc">Quelle (optional)</label><input type="text" id="pasteSrc" placeholder="z. B. Chefkoch, Omas Kochbuch"></div></div>
+      <textarea id="pasteTxt" style="min-height:140px" aria-label="Rezepttext" placeholder="Titel, Zutaten mit Mengen, Zubereitung …"></textarea>
+      <div class="row"><div class="chips" id="readerPick2"></div></div>
+      <div class="row"><button class="btn primary sm" id="btnPaste" type="button">Rezept übernehmen</button><button class="btn sm" type="button" onclick="editRecipe(null)">Leeres Formular</button></div>
+    </div>
+    <div class="queue" id="queue"></div>
+
+    <div class="sections">
+      <div class="panel"><h3>Immer zu Hause</h3>
+        <p class="small muted" style="margin:0 0 8px">Diese Zutaten landen nicht auf dem Einkaufszettel, sondern unter „Vorrat prüfen“. Eine pro Zeile.</p>
+        <textarea id="pantry" aria-label="Vorrat"></textarea>
+        <div class="row" style="margin-top:8px"><button class="btn sm" id="btnPantry" type="button">Vorrat speichern</button></div>
+      </div>
+      <div class="panel"><h3>Sicherung</h3>
+        <p class="small muted" style="margin:0 0 8px">Alle Rezepte als JSON-Datei sichern oder wieder einlesen. Die Originalkarten liegen im Add-on-Ordner und sind in den Home-Assistant-Backups enthalten.</p>
+        <div class="row"><a class="btn sm" href="api/export" download="kartenkueche-rezepte.json">Sicherung speichern</a>
+          <label class="btn sm" for="jsonIn">Sicherung einlesen</label><input type="file" id="jsonIn" accept=".json,application/json" hidden></div>
+      </div>
+      <div class="panel"><h3>Gewürzmischungen</h3>
+        <p class="small muted" style="margin:0 0 8px">Zutaten der HelloFresh-Mischungen, Quelle: <a href="https://github.com/Schischu/hello_fresh_gewuerze" target="_blank" rel="noopener">Schischu/hello_fresh_gewuerze</a> (GPL-3.0). Auf dem Einkaufszettel steht, was drin ist.</p>
+        <div id="spiceList" class="small"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<dialog id="dlg"><div class="dlg" id="dlgBody"></div></dialog>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+"use strict";
+/* ============ Vokabular ============ */
+const PROTEINS=["Geflügel","Rind","Schwein","Lamm","Fisch & Meeresfrüchte","Vegetarisch","Vegan"];
+const CATS=["Pasta & Gnocchi","Reis & Getreide","Kartoffeln","Suppe & Eintopf","Curry","Salat & Bowl","Burger, Wrap & Brot","Ofengericht","Pfannengericht","Auflauf & Gratin","Family","Comfort Food","Leicht"];
+const CUISINES=["Deutsch","Italienisch","Mediterran","Orientalisch","Asiatisch","Indisch","Mexikanisch","Amerikanisch","International"];
+const DERIVED=["Schnell","Kalorienarm"];
+const ALLERGENS=["Gluten","Krebstiere","Eier","Fisch","Erdnüsse","Soja","Milch","Schalenfrüchte","Sellerie","Senf","Sesam","Sulfite","Lupinen","Weichtiere"];
+const DAYS=["Mo","Di","Mi","Do","Fr","Sa","So"];
+const DEFAULT_PANTRY=["Salz","Pfeffer","Olivenöl","Öl","Pflanzenöl","Zucker","Mehl","Wasser","Honig","Balsamicoessig"];
+
+/* Gewürzmischungen (aus Schischu/hello_fresh_gewuerze) */
+const SPICES=[];
+function spiceFor(name){const n=name.toLowerCase().replace(/[„“"]/g,"").replace(/gewürzmischung\s*/,"").trim();
+  let best=null;for(const s of SPICES){const k=s[0].toLowerCase();if(n.includes(k)&&(!best||k.length>best[0].length))best=s;}return best;}
+
+/* ============ Helfer ============ */
+function h(tag,props,...kids){const el=document.createElement(tag);
+  for(const [k,v] of Object.entries(props||{})){if(v==null||v===false)continue;
+    if(k==="class")el.className=v;else if(k==="text")el.textContent=v;else if(k.startsWith("on"))el.addEventListener(k.slice(2),v);
+    else if(v===true)el.setAttribute(k,"");else el.setAttribute(k,String(v));}
+  for(const c of kids.flat(Infinity)){if(c==null||c===false)continue;el.append(c instanceof Node?c:String(c));}return el;}
+const $=id=>document.getElementById(id);
+function toast(msg){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2600);}
+function safeGet(k){try{return localStorage.getItem(k)}catch{return null}}
+function safeSet(k,v){try{localStorage.setItem(k,v)}catch{}}
+function slug(s){return (s||"rezept").toLowerCase().replace(/ä/g,"ae").replace(/ö/g,"oe").replace(/ü/g,"ue").replace(/ß/g,"ss").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,60)||"rezept";}
+function fmtNum(n){if(n==null||!isFinite(n))return "";const r=Math.round(n*100)/100;
+  const frac={0.25:"¼",0.5:"½",0.75:"¾"};const w=Math.floor(r),f=Math.round((r-w)*100)/100;
+  if(frac[f])return (w?w:"")+frac[f];return String(Math.round(r*10)/10).replace(".",",");}
+function fmtQty(q,u){if(q==null)return "nach Bedarf";let n=q;
+  if((u==="g"||u==="ml")&&n>=20)n=Math.round(n/5)*5;
+  if(u==="g"&&n>=1000)return fmtNum(n/1000)+" kg";if(u==="ml"&&n>=1000)return fmtNum(n/1000)+" l";
+  return fmtNum(n)+(u?" "+u:"");}
+function provClass(p){p=(p||"").toLowerCase();return p.includes("hello")?"hf":p.includes("marley")?"ms":p.includes("dinnerly")?"dn":"";}
+function timeText(r){if(r.timeMin&&r.timeMax&&r.timeMin!==r.timeMax)return r.timeMin+"–"+r.timeMax+" min";const t=r.timeMax||r.timeMin;return t?t+" min":"";}
+function rTags(r){const t=[...(r.categories||[])];if(r.cuisine)t.push(r.cuisine);
+  const tm=r.timeMax||r.timeMin;if(tm&&tm<=30)t.push("Schnell");if(r.kcal&&r.kcal<=650)t.push("Kalorienarm");return t;}
+function onlineUrl(r){const p=provClass(r.provider);
+  if(p==="hf")return "https://www.hellofresh.de/recipes/search?q="+encodeURIComponent(r.title);
+  const site=p==="ms"?"marleyspoon.de":p==="dn"?"dinnerly.de":"";
+  return "https://www.google.com/search?q="+encodeURIComponent((site?"site:"+site+" ":"")+'"'+r.title+'"');}
+
+/* ============ Zutaten-Normalisierung ============ */
+const UNIT_MAP={g:"g",gramm:"g",kg:"kg",ml:"ml",l:"l",liter:"l",el:"EL",tl:"TL",prise:"Prise",prisen:"Prise",stk:"Stk","stück":"Stk",stueck:"Stk",stange:"Stk",stangen:"Stk","stückchen":"Stk",knolle:"Stk",kopf:"Stk",scheibe:"Stk",scheiben:"Stk",zehe:"Zehe",zehen:"Zehe",bund:"Bund",dose:"Dose",dosen:"Dose",packung:"Pck","päckchen":"Pck",pck:"Pck",beutel:"Pck",glas:"Glas",becher:"Becher",handvoll:"Handvoll"};
+function normUnit(u){if(!u)return "";const k=String(u).toLowerCase().replace(/\.$/,"");return UNIT_MAP[k]||String(u);}
+const SYN=[[/^(lauchzwiebeln?|frühlingszwiebeln?)$/,"lauchzwiebel"],[/^knoblauch(zehen?)?$/,"knoblauch"],[/^(rote )?zwiebeln$/,m=>m.replace(/n$/,"")],
+ [/kartoffeln?$/,"kartoffel"],[/^champignons?$/,"champignons"],[/^hähnchenbrust(filets?)?$/,"hähnchenbrust"],[/^kirschtomaten?$/,"kirschtomaten"],
+ [/^(geriebener )?hartkäse$/,"hartkäse"],[/^gemüsebrüh(e|gewürz|pulver)$/,"gemüsebrühe"],[/^cr[eè]me fra[iî]che$/,"crème fraîche"],[/^karotten?|möhren?$/,"karotte"],
+ [/^paprikaschoten?|^paprika \(rot\)$/,"paprika"],[/^zucchinis?$/,"zucchini"],[/^limetten?$/,"limette"],[/^zitronen?$/,"zitrone"],[/^eier$/,"ei"]];
+function ingKey(name){let n=String(name||"").toLowerCase().replace(/[„“"]/g,"").replace(/\s+\d+(,\d+)*$/,"").replace(/\(.*?\)/g,"").trim();
+  n=n.replace(/^(frische[rn]?|mehligk(\.|ochende)?|festkochende|vorwiegend festkochende)\s+/,"").replace(/\s+/g," ").trim();
+  for(const [re,rep] of SYN){if(re.test(n)){n=typeof rep==="function"?rep(n):rep;break;}}return n;}
+function baseQty(q,u){u=normUnit(u);if(q==null)return [null,u];if(u==="kg")return [q*1000,"g"];if(u==="l")return [q*1000,"ml"];return [q,u];}
+
+/* Supermarkt-Gänge (erste passende Regel gewinnt) */
+const AISLES=[
+ ["Gewürze",/hello |gewürz|ras.el|curry(pulver)?$|paprikapulver|kreuzkümmel|kumin|zimt|muskat|chiliflocken|oregano getr|garam|kurkuma|curcuma|za.?atar|sumach|cayenne|piment|lorbeer/],
+ ["Trockenobst & Nüsse",/pinienkern|nüsse|nuss|mandel|cashew|sesam|getrocknete aprikose|aprikosen getr|rosinen|cranberr|datteln|sonnenblumenkern|kürbiskern/],
+ ["Konserven & Saucen",/dose|passiert|gehackte tomaten|kokosmilch|^mais$|kichererbsen|kidney|tomatenmark|sojasauce|brühe|fond|pesto|senf|essig|sauce|soße|getrocknete tomate|ketchup|mayo|sambal|sriracha|tahin|erdnussbutter|honig|sirup|kapern|oliven|ajvar/],
+ ["Nudeln, Reis & Getreide",/nudel|pasta|spaghetti|penne|tagliatelle|fusilli|linguine|rigatoni|orzo|reis|couscous|bulgur|quinoa|linsen|polenta|mie|udon|ramen|risotto|haferflocken|mehl|paniermehl|semmelbrösel/],
+ ["Kühlregal",/crème|creme|sahne|schmand|joghurt|quark|milch|butter|käse|mozzarella|feta|parmesan|frischkäse|ricotta|halloumi|burrata|gnocchi|tortellini|ravioli|^ei$|eier|hirtenkäse|mascarpone|skyr|tofu|hummus|blätterteig|pizzateig/],
+ ["Fleisch & Fisch",/hähnchen|huhn|hühn|pute|rind|hack|schwein|speck|schinken|wurst|lachs|fisch|garnele|kabeljau|seelachs|lamm|chorizo|salami|steak|filet|bacon|thunfisch|forelle|scampi|frikadelle|bratwurst|schnitzel/],
+ ["Brot & Backwaren",/baguette|brot|brötchen|tortilla|wrap|naan|ciabatta|fladenbrot|bun|toast|pita|focaccia/],
+ ["Kräuter",/petersilie|basilikum|koriander|schnittlauch|dill|minze|thymian|rosmarin|salbei|estragon|kresse|majoran/],
+ ["Obst & Gemüse",/./]];
+function aisleOf(key){for(const [a,re] of AISLES)if(re.test(key))return a;return "Sonstiges";}
+const AISLE_W={"Kräuter":1,"Kühlregal":.9,"Fleisch & Fisch":1,"Obst & Gemüse":.8,"Brot & Backwaren":.6,"Konserven & Saucen":.25,"Nudeln, Reis & Getreide":.12,"Trockenobst & Nüsse":.15,"Gewürze":.05,"Sonstiges":.3};
+/* typische Packungsgrößen im Supermarkt [Regex, Menge, Einheit, Packungsname] */
+const PACKS=[
+ [/crème fraîche|creme fraiche|schmand|saure sahne/,200,"g","Becher"],[/sahne/,200,"ml","Becher"],[/kokosmilch/,400,"ml","Dose"],
+ [/frischkäse/,200,"g","Pck"],[/mozzarella/,125,"g","Kugel"],[/feta|hirtenkäse/,200,"g","Pck"],[/halloumi/,225,"g","Pck"],[/ricotta/,250,"g","Becher"],
+ [/hartkäse|parmesan|grana/,100,"g","Stück"],[/bergkäse|bergjausen|reibekäse|geriebener käse|gouda|emmentaler/,150,"g","Pck"],[/joghurt/,500,"g","Becher"],[/quark/,250,"g","Becher"],
+ [/petersilie|koriander/,30,"g","Bund"],[/schnittlauch/,25,"g","Bund"],[/basilikum/,20,"g","Topf/Pck"],[/dill|minze/,20,"g","Bund"],[/thymian|rosmarin|salbei/,15,"g","Pck"],
+ [/champignons|pilze/,250,"g","Schale"],[/kirschtomaten|cherrytomaten/,250,"g","Schale"],[/babyspinat|spinat/,125,"g","Beutel"],[/rucola/,100,"g","Beutel"],
+ [/lauchzwiebel/,6,"Stk","Bund"],[/knoblauch/,10,"Zehe","Knolle"],[/gnocchi/,500,"g","Pck"],[/couscous|bulgur/,500,"g","Pck"],[/reis/,500,"g","Pck"],
+ [/nudel|pasta|spaghetti|penne|fusilli|rigatoni|linguine|tagliatelle/,500,"g","Pck"],[/passierte tomaten/,500,"g","Pck"],[/gehackte tomaten/,400,"g","Dose"],
+ [/hähnchenbrust|hähnchenschenkel|putenbrust/,400,"g","Pck"],[/hackfleisch|rinderhack|gemischtes hack/,400,"g","Pck"],[/lachs/,250,"g","Pck"],
+ [/pinienkerne/,50,"g","Tüte"],[/getrocknete aprikose|aprikosen/,200,"g","Pck"],[/getrocknete tomate/,100,"g","Glas"],[/tortilla|wrap/,6,"Stk","Pck"],[/mais/,285,"g","Dose"],[/kichererbsen/,265,"g","Dose"]];
+function packFor(key,unit){for(const [re,q,u,nm] of PACKS)if(re.test(key)&&u===unit)return {q,nm};return null;}
+
+/* ============ Datenhaltung (Server) ============ */
+const S={recipes:new Map(),state:null,ready:false,info:null};
+function defaultState(){return {prefs:{days:["Mo","Di","Mi","Do","Fr"],portions:2,maxTime:0,boost:[],exclude:[],proteinOff:[],vegMin:0,rest:1,avoidIng:"",allergens:[],kcalMax:0,recentWeeks:2,includeReview:true},
+  plan:null,checked:{},pantry:DEFAULT_PANTRY.slice(),haTodo:""};}
+async function api(path,opt){const r=await fetch("api/"+path,opt);let body=null;try{body=await r.json();}catch{}
+  if(!r.ok){const e=new Error(body?.detail||("Fehler "+r.status));e.status=r.status;e.body=body;throw e;}return body;}
+const jsonOpt=(method,data)=>({method,headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
+let stateWriting=false,stateDirty=false,stateTimer=null;
+function saveState(){stateDirty=true;clearTimeout(stateTimer);stateTimer=setTimeout(flushState,500);}
+async function flushState(){if(stateWriting||!stateDirty)return;stateWriting=true;stateDirty=false;
+  try{await api("state",jsonOpt("PUT",S.state));}catch(e){toast("Speichern fehlgeschlagen: "+e.message);}
+  stateWriting=false;if(stateDirty)flushState();}
+async function saveRecipe(r){try{const saved=await api("recipes/"+encodeURIComponent(r.id),jsonOpt("PUT",r));S.recipes.set(saved.id,saved);}
+  catch(e){toast("Rezept nicht gespeichert: "+e.message);}renderAll();}
+async function deleteRecipe(id){try{await api("recipes/"+encodeURIComponent(id),{method:"DELETE"});}catch(e){toast(e.message);return;}
+  S.recipes.delete(id);if(S.state.plan)S.state.plan.days.forEach(d=>{if(d.recipeId===id){d.recipeId=null;d.locked=false;}});saveState();renderAll();}
+async function loadAll(){const [rec,st]=await Promise.all([api("recipes"),api("state")]);
+  S.recipes=new Map(rec.map(r=>[r.id,r]));
+  if(!stateDirty&&!stateWriting){S.state=Object.assign(defaultState(),st||{});S.state.prefs=Object.assign(defaultState().prefs,S.state.prefs||{});}
+  S.ready=true;$("status").textContent=S.recipes.size+" Rezepte im Katalog";renderAll();}
+async function initStore(){S.state=defaultState();
+  try{S.info=await api("info");}catch(e){$("status").textContent="Server nicht erreichbar";return;}
+  try{const sp=await api("spices");loadSpices(sp);}catch{}
+  try{await loadAll();}catch(e){$("status").textContent="Daten nicht ladbar: "+e.message;}
+  setupImportUi();renderSpices();
+  window.addEventListener("focus",()=>{if(!document.querySelector("dialog[open]"))loadAll().catch(()=>{});});}
+
+/* ============ Planer ============ */
+function prefsOf(){return S.state.prefs;}
+function isPantry(key){return (S.state.pantry||[]).some(p=>ingKey(p)===key);}
+function candidates(){const p=prefsOf();const avoid=(p.avoidIng||"").split(",").map(s=>s.trim().toLowerCase()).filter(Boolean);
+  return [...S.recipes.values()].filter(r=>{
+    if(p.proteinOff.includes(r.protein))return false;
+    if(p.includeReview===false&&r.review)return false;
+    const tg=rTags(r);if(p.exclude.some(x=>tg.includes(x)))return false;
+    const t=r.timeMax||r.timeMin;if(p.maxTime&&t&&t>p.maxTime)return false;
+    if(p.kcalMax&&r.kcal&&r.kcal>p.kcalMax)return false;
+    if(p.allergens.some(a=>(r.allergens||[]).includes(a)))return false;
+    if(avoid.length&&(r.ingredients||[]).some(i=>avoid.some(a=>ingKey(i.name).includes(a)||String(i.name).toLowerCase().includes(a))))return false;
+    return true;});}
+function prefScore(r,jit){const p=prefsOf();let s=1;const tg=rTags(r);
+  for(const b of p.boost)if(tg.includes(b)||r.protein===b)s+=1.3;
+  s+=(r.rating||0)*.25;
+  if(p.recentWeeks&&r.lastCooked&&(Date.now()-r.lastCooked)<p.recentWeeks*7*864e5)s-=3;
+  return s+(jit?jit[r.id]||0:0);}
+function aggregate(recs,portions){const m=new Map();
+  recs.forEach((r,idx)=>{const f=portions/(r.servings||2);
+    for(const i of r.ingredients||[]){const key=ingKey(i.name);if(!key)continue;const [q,u]=baseQty(i.qty,i.unit);const k=key+"|"+u;
+      let e=m.get(k);if(!e){e={key,unit:u,name:i.name,need:0,anyNull:false,recs:new Set(),idx:new Set(),pantry:isPantry(key),aisle:aisleOf(key)};m.set(k,e);}
+      if(q==null)e.anyNull=true;else e.need+=q*f;e.recs.add(r.id);e.idx.add(idx);}});
+  for(const e of m.values()){e.w=AISLE_W[e.aisle]??.3;const pk=packFor(e.key,e.unit);
+    if(pk&&e.need>0){e.pack=pk;e.packs=Math.ceil(e.need/pk.q-1e-6);e.left=e.packs*pk.q-e.need;}}
+  return m;}
+function evalSet(recs,jit){const p=prefsOf();const opt=p.rest??1;let s=0;
+  for(const r of recs)s+=prefScore(r,jit);
+  if(opt>0){const ag=aggregate(recs,p.portions);let ov=0,waste=0;
+    for(const e of ag.values()){if(e.pantry)continue;if(e.recs.size>1)ov+=(e.recs.size-1)*e.w;if(e.pack)waste+=e.w*e.left/e.pack.q;}
+    s+=opt*(1.1*ov-1.4*waste);}
+  const prot={},cat={};let veg=0;
+  for(const r of recs){prot[r.protein]=(prot[r.protein]||0)+1;if(r.protein==="Vegetarisch"||r.protein==="Vegan")veg++;for(const c of r.categories||[])if(c!=="Family"&&c!=="Leicht")cat[c]=(cat[c]||0)+1;}
+  const maxSame=Math.max(2,Math.ceil(recs.length/2));
+  for(const k in prot)if(k!=="Vegetarisch"&&prot[k]>maxSame)s-=1.5*(prot[k]-maxSame);
+  for(const k in cat)if(cat[k]>1)s-=.45*(cat[k]-1);
+  if(veg<p.vegMin)s-=4*(p.vegMin-veg);
+  return s;}
+function optimize(n,locked,cands,jit){
+  const pool=cands.filter(c=>!locked.some(l=>l.id===c.id));const need=n-locked.length;
+  if(need<=0)return locked.slice(0,n);if(pool.length<=need)return locked.concat(pool);
+  let best=null,bestS=-Infinity;
+  for(let rs=0;rs<14;rs++){
+    const sh=pool.slice().sort(()=>Math.random()-.5);let cur=sh.slice(0,need);let curS=evalSet(locked.concat(cur),jit);
+    for(let round=0;round<15;round++){let improved=false;
+      for(let i=0;i<cur.length;i++){const inSet=new Set(cur.map(x=>x.id));let bi=null,bs=curS;
+        for(const c of pool){if(inSet.has(c.id))continue;const t=cur.slice();t[i]=c;const sc=evalSet(locked.concat(t),jit);if(sc>bs+1e-9){bs=sc;bi=c;}}
+        if(bi){cur[i]=bi;curS=bs;improved=true;}}
+      if(!improved)break;}
+    if(curS>bestS){bestS=curS;best=cur;}}
+  return locked.concat(best);}
+function perish(r){let s={"Fisch & Meeresfrüchte":3,"Geflügel":2.2,"Rind":1.8,"Schwein":1.8,"Lamm":1.8}[r.protein]||0;
+  for(const i of r.ingredients||[]){const a=aisleOf(ingKey(i.name));if(a==="Kräuter")s+=.5;if(a==="Kühlregal")s+=.15;}return s;}
+function makePlan(reroll){const p=prefsOf();const days=DAYS.filter(d=>p.days.includes(d));
+  if(!days.length){toast("Wähle mindestens einen Kochtag.");return;}
+  const old=S.state.plan;const lockedDays=(old?.days||[]).filter(d=>d.locked&&d.recipeId&&S.recipes.has(d.recipeId)&&days.includes(d.day));
+  const locked=lockedDays.map(d=>S.recipes.get(d.recipeId));
+  const jit={};const amp=reroll?1.2:.35;for(const r of S.recipes.values())jit[r.id]=(Math.random()-.5)*amp;
+  const cands=candidates();const picked=optimize(days.length,locked,cands,jit);
+  const free=picked.filter(r=>!locked.includes(r)).sort((a,b)=>perish(b)-perish(a));
+  const out=days.map(d=>{const L=lockedDays.find(x=>x.day===d);if(L)return {day:d,recipeId:L.recipeId,locked:true,cooked:!!L.cooked};
+    const r=free.shift();return {day:d,recipeId:r?r.id:null,locked:false,cooked:false};});
+  S.state.plan={createdAt:Date.now(),portions:p.portions,days:out};S.state.checked={};saveState();renderAll();
+  toast(reroll?"Neuer Vorschlag erstellt":"Woche geplant");}
+const swapSeen={};
+function swapDay(day){const plan=S.state.plan;const slot=plan.days.find(d=>d.day===day);const others=plan.days.filter(d=>d!==slot&&d.recipeId).map(d=>S.recipes.get(d.recipeId)).filter(Boolean);
+  const seen=swapSeen[day]||(swapSeen[day]=new Set());if(slot.recipeId)seen.add(slot.recipeId);
+  let pool=candidates().filter(c=>!others.some(o=>o.id===c.id)&&!seen.has(c.id));
+  if(!pool.length){seen.clear();if(slot.recipeId)seen.add(slot.recipeId);pool=candidates().filter(c=>!others.some(o=>o.id===c.id)&&c.id!==slot.recipeId);}
+  if(!pool.length){toast("Kein anderes passendes Rezept vorhanden.");return;}
+  const ranked=pool.map(c=>[c,evalSet(others.concat([c]))]).sort((a,b)=>b[1]-a[1]);
+  slot.recipeId=ranked[0][0].id;slot.cooked=false;saveState();renderAll();}
+function planRecipes(){const p=S.state.plan;if(!p)return [];return p.days.map(d=>d.recipeId&&S.recipes.get(d.recipeId)).filter(Boolean);}
+
+/* ============ Rendering: Woche ============ */
+function stepper(el,get,set,min,max){const [m,out,pl]=[el.children[0],el.children[1],el.children[2]];
+  out.textContent=get();m.onclick=()=>{set(Math.max(min,get()-1));out.textContent=get();};pl.onclick=()=>{set(Math.min(max,get()+1));out.textContent=get();};}
+function chipSet(container,items,arr,onChange,neg){container.replaceChildren(...items.map(it=>{const b=h("button",{type:"button",class:"chip"+(neg?" neg":""),"aria-pressed":String(arr().includes(it))},it);
+  b.onclick=()=>{const a=arr();const i=a.indexOf(it);if(i>=0)a.splice(i,1);else a.push(it);b.setAttribute("aria-pressed",String(a.includes(it)));onChange();};return b;}));}
+let prefsBuilt=false;
+function buildPrefs(){const p=prefsOf();
+  $("pDays").replaceChildren(...DAYS.map(d=>{const b=h("button",{type:"button",class:"chip","aria-pressed":String(p.days.includes(d))},d);
+    b.onclick=()=>{const i=p.days.indexOf(d);if(i>=0)p.days.splice(i,1);else p.days.push(d);b.setAttribute("aria-pressed",String(p.days.includes(d)));$("dishCount").textContent="· "+p.days.length+" Gerichte";saveState();};return b;}));
+  $("dishCount").textContent="· "+p.days.length+" Gerichte";
+  stepper($("pPortions"),()=>p.portions,v=>{p.portions=v;if(S.state.plan)S.state.plan.portions=v;saveState();renderShop();renderWeek();},1,8);
+  stepper($("pVeg"),()=>p.vegMin,v=>{p.vegMin=v;saveState();},0,7);
+  $("pTime").value=String(p.maxTime||0);$("pTime").onchange=e=>{p.maxTime=+e.target.value;saveState();};
+  chipSet($("pBoost"),[...CATS.filter(c=>c!=="Leicht"),...CUISINES,...DERIVED],()=>p.boost,saveState);
+  chipSet($("pProtein"),PROTEINS,()=>{const on=PROTEINS.filter(x=>!p.proteinOff.includes(x));return on;},()=>{},false);
+  // Protein-Chips: gedrückt = erlaubt
+  [...$("pProtein").children].forEach(b=>{const it=b.textContent;b.setAttribute("aria-pressed",String(!p.proteinOff.includes(it)));
+    b.onclick=()=>{const i=p.proteinOff.indexOf(it);if(i>=0)p.proteinOff.splice(i,1);else p.proteinOff.push(it);b.setAttribute("aria-pressed",String(!p.proteinOff.includes(it)));saveState();};});
+  chipSet($("pExclude"),[...CATS,...CUISINES],()=>p.exclude,saveState,true);
+  chipSet($("pAllergen"),ALLERGENS,()=>p.allergens,saveState,true);
+  const rl=["aus","normal","stark"];$("pRest").value=String(p.rest??1);$("pRestLbl").textContent="· "+rl[p.rest??1];
+  $("pRest").oninput=e=>{p.rest=+e.target.value;$("pRestLbl").textContent="· "+rl[p.rest];saveState();};
+  $("pAvoidIng").value=p.avoidIng||"";$("pAvoidIng").onchange=e=>{p.avoidIng=e.target.value;saveState();};
+  $("pKcal").value=p.kcalMax||"";$("pKcal").onchange=e=>{p.kcalMax=+e.target.value||0;saveState();};
+  $("pReview").checked=p.includeReview!==false;$("pReview").onchange=e=>{p.includeReview=e.target.checked;saveState();};
+  $("pRecent").value=String(p.recentWeeks||0);$("pRecent").onchange=e=>{p.recentWeeks=+e.target.value;saveState();};
+  prefsBuilt=true;}
+function weekStartLabel(ts){const d=new Date(ts);const dow=(d.getDay()+6)%7;const mon=new Date(d);mon.setDate(d.getDate()+(dow>=4?7-dow:-dow));
+  return mon.toLocaleDateString("de-DE",{day:"numeric",month:"long"});}
+function renderWeek(){const plan=S.state.plan;const list=$("dayList");const recs=planRecipes();
+  if(!S.recipes.size){list.replaceChildren(h("div",{class:"empty"},h("b",{},"Noch keine Rezepte im Katalog"),h("span",{},"Lies zuerst ein paar Rezeptkarten ein, dann plant die App deine Woche."),h("a",{class:"btn primary",href:"#import"},"Karten einlesen")));
+    $("summary").replaceChildren();$("radar").replaceChildren();$("planNote").replaceChildren();$("weekTitle").textContent="Noch kein Plan";return;}
+  if(!plan){list.replaceChildren(h("div",{class:"empty"},h("b",{},S.recipes.size+" Rezepte bereit"),h("span",{},"Stell links deine Vorlieben ein und lass die Woche planen."),h("button",{class:"btn primary",type:"button",onclick:()=>makePlan(false)},"Woche planen")));
+    $("summary").replaceChildren();$("radar").replaceChildren();$("planNote").replaceChildren();$("weekTitle").textContent="Noch kein Plan";return;}
+  $("weekLbl").textContent="Woche ab "+weekStartLabel(plan.createdAt);$("weekTitle").textContent=recs.length+" Gerichte, "+prefsOf().portions+" Portionen";
+  const ag=aggregate(recs,prefsOf().portions);
+  const shared=[...ag.values()].filter(e=>!e.pantry&&e.recs.size>1&&e.aisle!=="Gewürze");
+  const kcal=recs.reduce((a,r)=>a+(r.kcal||0),0);const tmin=recs.reduce((a,r)=>a+(r.timeMax||r.timeMin||0),0);
+  const buyN=[...ag.values()].filter(e=>!e.pantry).length;
+  $("summary").replaceChildren(
+    h("div",{},h("b",{class:"mono"},String(shared.length)),h("span",{class:"small muted"},"geteilte Zutaten")),
+    h("div",{},h("b",{class:"mono"},String(buyN)),h("span",{class:"small muted"},"Posten zum Einkaufen")),
+    h("div",{},h("b",{class:"mono"},recs.length?Math.round(kcal/recs.length)+"":"–"),h("span",{class:"small muted"},"kcal/Portion im Schnitt")),
+    h("div",{},h("b",{class:"mono"},Math.round(tmin/60*10)/10+" h"),h("span",{class:"small muted"},"Kochzeit gesamt")));
+  const missing=plan.days.filter(d=>!d.recipeId).length;
+  $("planNote").replaceChildren(missing?h("div",{class:"note",style:"margin-bottom:12px"},"Für "+missing+" Tag(e) gibt es kein passendes Rezept mehr. Lies mehr Karten ein oder lockere die Filter."):"");
+  list.replaceChildren(...plan.days.map(d=>{const r=d.recipeId&&S.recipes.get(d.recipeId);
+    const lbl=h("div",{class:"dayLabel"},h("b",{},d.day),h("span",{},d.cooked?"gekocht":""));
+    if(!r)return h("div",{class:"dayCard"},lbl,h("div",{class:"dayBody"},h("span",{class:"muted"},"Kein Rezept"),h("div",{class:"dayActions"},h("button",{class:"btn sm",type:"button",onclick:()=>swapDay(d.day)},"Rezept suchen"))));
+    const mine=[...ag.values()].filter(e=>!e.pantry&&e.recs.has(r.id)&&e.recs.size>1&&e.aisle!=="Gewürze");
+    const shares=mine.slice(0,5).map(e=>{const od=plan.days.filter(x=>x.recipeId!==r.id&&e.recs.has(x.recipeId)).map(x=>x.day);return h("span",{class:"share"},h("b",{},e.name.replace(/\s+\d+(,\d+)*$/,"")),"  auch "+od.join(", "));});
+    return h("div",{class:"dayCard"+(d.cooked?" cooked":"")},lbl,h("div",{class:"dayBody"},
+      h("h3",{onclick:()=>openRecipe(r.id)},r.title),
+      h("div",{class:"meta"},h("span",{class:"prov "+provClass(r.provider)},r.provider||"Rezept"),timeText(r)&&h("span",{class:"mono"},timeText(r)),r.kcal&&h("span",{class:"mono"},r.kcal+" kcal"),h("span",{},r.protein||"")),
+      shares.length?h("div",{class:"shared"},shares):null,
+      h("div",{class:"dayActions"},
+        h("button",{class:"btn sm"+(d.locked?" on":""),type:"button","aria-pressed":String(!!d.locked),onclick:()=>{d.locked=!d.locked;saveState();renderWeek();}},d.locked?"Fixiert":"Fixieren"),
+        h("button",{class:"btn sm",type:"button",onclick:()=>swapDay(d.day)},"Tauschen"),
+        h("button",{class:"btn sm"+(d.cooked?" on":""),type:"button",onclick:()=>toggleCooked(d,r)},d.cooked?"Gekocht ✓":"Gekocht"))));}));
+  renderRadar(ag,recs);}
+function toggleCooked(d,r){d.cooked=!d.cooked;saveState();if(d.cooked){const c=Object.assign({},r);c.lastCooked=Date.now();c.cookedCount=(r.cookedCount||0)+1;saveRecipe(c);}else renderAll();}
+function renderRadar(ag,recs){const ids=new Set(recs.map(r=>r.id));
+  const left=[...ag.values()].filter(e=>!e.pantry&&e.pack&&e.left>0&&e.w>=.5).sort((a,b)=>b.w*b.left/b.pack.q-a.w*a.left/a.pack.q).slice(0,6);
+  if(!left.length){$("radar").replaceChildren(h("h3",{},"Reste-Radar"),h("p",{class:"muted small"},"Nach Plan bleiben keine verderblichen Reste aus angebrochenen Packungen."));return;}
+  $("radar").replaceChildren(h("h3",{},"Reste-Radar"),h("p",{class:"muted small",style:"margin:0 0 8px"},"Was bei typischen Supermarkt-Packungen übrig bleibt, und welche Karten es verwerten würden."),
+    h("ul",{},left.map(e=>{const users=[...S.recipes.values()].filter(r=>!ids.has(r.id)&&(r.ingredients||[]).some(i=>ingKey(i.name)===e.key)).slice(0,3);
+      return h("li",{},h("div",{},h("b",{},e.name)," · ",h("span",{class:"mono"},fmtQty(e.need,e.unit)+" gebraucht, "+e.packs+" × "+fmtQty(e.pack.q,e.unit)+" "+e.pack.nm+" → "+fmtQty(e.left,e.unit)+" übrig")),
+        users.length?h("div",{class:"small muted"},"Verwerten mit: ",users.map((u,i)=>[i?", ":"",h("a",{href:"#rezepte",onclick:ev=>{ev.preventDefault();openRecipe(u.id);}},u.title)])):h("div",{class:"small muted"},"Kein weiteres Rezept im Katalog nutzt das."));})));}
+
+/* ============ Einkaufszettel ============ */
+const AISLE_ORDER=["Obst & Gemüse","Kräuter","Kühlregal","Fleisch & Fisch","Brot & Backwaren","Nudeln, Reis & Getreide","Konserven & Saucen","Trockenobst & Nüsse","Gewürze","Sonstiges"];
+function shopData(){const recs=planRecipes();const plan=S.state.plan;const ag=aggregate(recs,prefsOf().portions);
+  const dayOf=id=>plan.days.filter(d=>d.recipeId===id).map(d=>d.day);
+  const items=[...ag.values()].map(e=>Object.assign(e,{id:e.key+"|"+e.unit,days:[...e.recs].flatMap(dayOf)}));
+  return {recs,items};}
+function renderShop(){const body=$("shopBody");const plan=S.state.plan;
+  if(!plan||!planRecipes().length){body.replaceChildren(h("div",{class:"empty"},h("b",{},"Noch kein Wochenplan"),h("a",{class:"btn primary",href:"#woche"},"Woche planen")));$("cntShop").textContent="";$("shopDishes").textContent="0";return;}
+  const {recs,items}=shopData();$("shopDishes").textContent=recs.length;$("shopLbl").textContent="Woche ab "+weekStartLabel(plan.createdAt)+" · "+prefsOf().portions+" Portionen";
+  const buy=items.filter(e=>!e.pantry);const open=buy.filter(e=>!S.state.checked[e.id]).length;$("cntShop").textContent=open?String(open):"";
+  const groups={};for(const e of buy)(groups[e.aisle]||(groups[e.aisle]=[])).push(e);
+  const cols=AISLE_ORDER.filter(a=>groups[a]).map(a=>{const list=groups[a].sort((x,y)=>x.name.localeCompare(y.name,"de"));
+    return h("div",{class:"aisle"},h("h3",{},a,h("span",{class:"muted mono small"},String(list.length))),list.map(itemRow));});
+  const pan=items.filter(e=>e.pantry);
+  if(pan.length)cols.push(h("div",{class:"aisle"},h("h3",{},"Vorrat prüfen",h("span",{class:"muted mono small"},String(pan.length))),pan.map(itemRow)));
+  body.replaceChildren(h("div",{class:"aisles"},cols));}
+function itemRow(e){const done=!!S.state.checked[e.id];const id="ck-"+slug(e.id);
+  const cb=h("input",{type:"checkbox",id,checked:done});cb.onchange=()=>{if(cb.checked)S.state.checked[e.id]=true;else delete S.state.checked[e.id];saveState();renderShop();};
+  const sp=e.aisle==="Gewürze"?spiceFor(e.name):null;
+  const qty=e.need>0?fmtQty(e.need,e.unit)+(e.anyNull?" +":""):"nach Bedarf";
+  return h("div",{class:"item"+(done?" done":"")},cb,h("label",{for:id},h("div",{class:"nm"},e.name.replace(/\s+\d+(,\d+)*$/,"")),
+      h("div",{class:"sub"},e.days.join(", "),e.pack?" · "+e.packs+" × "+fmtQty(e.pack.q,e.unit)+" "+e.pack.nm+(e.left>0?", "+fmtQty(e.left,e.unit)+" übrig":""):""),
+      sp?h("div",{class:"spiceInfo"},"Enthält: "+sp[1],sp[2]?[" · Ersatz: ",h("a",{href:sp[2],target:"_blank",rel:"noopener"},sp[3])]:""):null),
+    h("span",{class:"qty"},qty));}
+function shopText(){const {items}=shopData();const buy=items.filter(e=>!e.pantry&&!S.state.checked[e.id]);let t="Einkaufszettel – Woche ab "+weekStartLabel(S.state.plan.createdAt)+"\n";
+  for(const a of AISLE_ORDER){const l=buy.filter(e=>e.aisle===a);if(!l.length)continue;t+="\n"+a+"\n";for(const e of l)t+="- "+(e.need>0?fmtQty(e.need,e.unit)+" ":"")+e.name.replace(/\s+\d+(,\d+)*$/,"")+"\n";}return t;}
+
+/* ============ Rezepte ============ */
+const filt={q:"",chips:[]};
+function renderRecipes(){$("cntRec").textContent=S.recipes.size?String(S.recipes.size):"";
+  const all=[...S.recipes.values()];const facets=[...new Set([...(all.some(r=>r.review)?["Zu prüfen"]:[]),"HelloFresh","Marley Spoon","Dinnerly",...all.map(r=>r.provider).filter(Boolean),...PROTEINS,...CATS,...CUISINES,...DERIVED])].filter(f=>all.some(r=>r.provider===f||r.protein===f||rTags(r).includes(f)));
+  $("fChips").replaceChildren(...facets.map(f=>{const b=h("button",{type:"button",class:"chip","aria-pressed":String(filt.chips.includes(f))},f);
+    b.onclick=()=>{const i=filt.chips.indexOf(f);if(i>=0)filt.chips.splice(i,1);else filt.chips.push(f);renderRecipes();};return b;}));
+  const q=filt.q.trim().toLowerCase();
+  const list=all.filter(r=>filt.chips.every(f=>f==="Zu prüfen"?r.review:(r.provider===f||r.protein===f||rTags(r).includes(f))))
+    .filter(r=>!q||(r.title+" "+(r.subtitle||"")+" "+(r.ingredients||[]).map(i=>i.name).join(" ")).toLowerCase().includes(q))
+    .sort((a,b)=>a.title.localeCompare(b.title,"de"));
+  if(!all.length){$("recGrid").replaceChildren(h("div",{class:"empty",style:"grid-column:1/-1"},h("b",{},"Der Katalog ist leer"),h("a",{class:"btn primary",href:"#import"},"Karten einlesen")));return;}
+  $("recGrid").replaceChildren(...(list.length?list.map(r=>h("button",{type:"button",class:"rcard",onclick:()=>openRecipe(r.id)},
+    h("div",{class:"row",style:"justify-content:space-between"},h("span",{class:"prov "+provClass(r.provider)},r.provider||"Rezept"),r.review?h("span",{class:"badge"},"zu prüfen"):null),h("h3",{},r.title),r.subtitle?h("div",{class:"sub"},r.subtitle):null,
+    h("div",{class:"meta"},timeText(r)&&h("span",{class:"mono"},timeText(r)),r.kcal&&h("span",{class:"mono"},r.kcal+" kcal"),r.protein&&h("span",{},r.protein)),
+    h("div",{class:"chips"},rTags(r).slice(0,4).map(t=>h("span",{class:"tag"},t))))):[h("p",{class:"muted"},"Keine Treffer.")]));}
+function openRecipe(id){const r=S.recipes.get(id);if(!r)return;const d=$("dlg");const p=prefsOf();const f=p.portions/(r.servings||2);
+  const plan=S.state.plan;const sel=h("select",{id:"dlgDay","aria-label":"Tag"},DAYS.map(x=>h("option",{value:x},x)));
+  const stars=h("div",{class:"row"},h("span",{class:"small muted"},"Bewertung"),[1,2,3,4,5].map(n=>h("button",{type:"button",class:"chip","aria-pressed":String((r.rating||0)>=n),"aria-label":n+" Sterne",onclick:()=>{const c=Object.assign({},r);c.rating=(r.rating===n?0:n);saveRecipe(c);openRecipe(id);}},"★")));
+  $("dlgBody").replaceChildren(
+    h("div",{class:"dlgHead"},h("div",{},h("span",{class:"prov "+provClass(r.provider)},r.provider||"Rezept"),h("h2",{},r.title),r.subtitle?h("div",{class:"muted"},r.subtitle):null),
+      h("button",{class:"btn sm ghost",type:"button","aria-label":"Schließen",onclick:()=>d.close()},"✕")),
+    r.review?h("div",{class:"note row",style:"justify-content:space-between"},h("span",{},"Automatisch eingelesen ("+(r.reader==="claude"?"Claude":"kostenloser Leser")+"). Bitte einmal prüfen."),h("button",{class:"btn sm",type:"button",onclick:()=>editRecipe(r)},"Jetzt prüfen")):null,
+    h("div",{class:"meta"},timeText(r)&&h("span",{class:"mono"},timeText(r)),r.kcal&&h("span",{class:"mono"},r.kcal+" kcal/Portion"),h("span",{},r.protein||""),r.cookedCount?h("span",{},r.cookedCount+"× gekocht"):null),
+    h("div",{class:"chips"},rTags(r).map(t=>h("span",{class:"tag"},t))),stars,
+    h("div",{class:"two"},
+      h("div",{},h("div",{class:"eyebrow",style:"margin-bottom:6px"},"Zutaten für "+p.portions+" Portionen"),
+        h("div",{class:"ings"},(r.ingredients||[]).flatMap(i=>{const [q,u]=baseQty(i.qty,i.unit);const sp=spiceFor(i.name);const pan=isPantry(ingKey(i.name));
+          return [h("span",{class:"q"},q==null?"":fmtQty(q*f,u)),h("span",{class:pan?"pan":""},i.name,pan?" (Vorrat)":"",sp?h("div",{class:"spiceInfo"},"Enthält: "+sp[1]):null)];}))),
+      h("div",{},h("div",{class:"eyebrow",style:"margin-bottom:6px"},"Allergene"),h("div",{class:"small"},(r.allergens||[]).join(", ")||"keine Angabe"),
+        h("div",{class:"eyebrow",style:"margin:12px 0 6px"},"In den Plan"),
+        h("div",{class:"row"},sel,h("button",{class:"btn sm",type:"button",onclick:()=>{const day=sel.value;if(!S.state.plan)S.state.plan={createdAt:Date.now(),portions:p.portions,days:p.days.length?DAYS.filter(x=>p.days.includes(x)).map(x=>({day:x,recipeId:null,locked:false,cooked:false})):[]};
+          let slot=S.state.plan.days.find(x=>x.day===day);if(!slot){slot={day,recipeId:null,locked:false,cooked:false};S.state.plan.days.push(slot);S.state.plan.days.sort((a,b)=>DAYS.indexOf(a.day)-DAYS.indexOf(b.day));}
+          slot.recipeId=r.id;slot.locked=true;slot.cooked=false;saveState();renderAll();d.close();toast(r.title+" fix am "+day+" eingeplant");}},"Einplanen & fixieren")),
+        h("div",{class:"row",style:"margin-top:12px"},r.card?h("a",{class:"btn sm",href:"api/recipes/"+encodeURIComponent(r.id)+"/card",target:"_blank",rel:"noopener"},"Originalkarte"):null,
+          r.card&&S.info?.readers?.claude?h("button",{class:"btn sm",type:"button",id:"btnReread",onclick:()=>reread(r.id)},"Mit Claude neu einlesen"):null,
+          h("a",{class:"btn sm",href:onlineUrl(r),target:"_blank",rel:"noopener"},"Online ansehen"),h("button",{class:"btn sm",type:"button",onclick:()=>editRecipe(r)},"Bearbeiten"),
+          h("button",{class:"btn sm danger",type:"button",onclick:ev=>{const b=ev.currentTarget;if(b.dataset.c){deleteRecipe(r.id);d.close();toast("Rezept gelöscht");}else{b.dataset.c="1";b.textContent="Wirklich löschen?";}}},"Löschen")))),
+    r.steps?.length?h("div",{},h("div",{class:"eyebrow",style:"margin-bottom:6px"},"Zubereitung"),h("ol",{class:"steps"},r.steps.map(s=>h("li",{},s.title?h("b",{},s.title):null,s.text)))):null);
+  if(plan){const free=plan.days.find(x=>!x.recipeId);if(free)sel.value=free.day;}
+  if(!d.open)d.showModal();}
+function ingLine(i){const [q,u]=[i.qty,normUnit(i.unit)];return (q!=null?fmtNum(q)+" ":"")+(u?u+" ":"")+i.name+(i.pantry?" *":"");}
+function parseIngLine(line){line=line.replace(/^[•\-–*]\s*/,"").trim();if(!line)return null;let pantry=false;if(/\*$/.test(line)){pantry=true;line=line.replace(/\s*\*$/,"");}
+  const m=line.match(/^([\d.,/½¼¾]+(?:\s*[–-]\s*[\d.,]+)?)?\s*(g|kg|ml|l|EL|TL|Prise|Prisen|Stk|Stück|Stückchen|Stange|Stangen|Zehe|Zehen|Bund|Dose|Dosen|Packung|Päckchen|Pck|Becher|Knolle|Kopf|Glas|Beutel|Scheiben?|Handvoll)?\.?\s+(.+)$/i);
+  let qty=null,unit="",name=line;if(m&&(m[1]||m[2])){qty=m[1]?parseQty(m[1]):null;unit=normUnit(m[2]||"Stk");if(!m[2]&&m[1])unit="Stk";name=m[3];}
+  name=name.replace(/\s+\d+(,\d+)*$/,"").trim();return {name,qty,unit,pantry,raw:line};}
+function parseQty(s){s=s.replace(/½/,".5").replace(/¼/,".25").replace(/¾/,".75").replace(",",".");
+  const r=s.match(/([\d.]+)\s*[–-]\s*([\d.]+)/);if(r)return (parseFloat(r[1])+parseFloat(r[2]))/2;
+  const fr=s.match(/^(\d+)\/(\d+)$/);if(fr)return +fr[1]/+fr[2];const n=parseFloat(s);return isFinite(n)?n:null;}
+function editRecipe(r){const isNew=!r;r=r?JSON.parse(JSON.stringify(r)):{id:"",title:"",provider:"Sonstige",servings:2,ingredients:[],categories:[],steps:[],allergens:[]};
+  const d=$("dlg");const f={};
+  const field=(lbl,el)=>h("div",{class:"field"},h("label",{for:el.id},lbl),el);
+  f.title=h("input",{type:"text",id:"eTitle",value:r.title||""});f.sub=h("input",{type:"text",id:"eSub",value:r.subtitle||""});
+  f.prov=h("input",{type:"text",id:"eProv",list:"provList",value:r.provider||""});const provList=h("datalist",{id:"provList"},[...new Set(["HelloFresh","Marley Spoon","Dinnerly",...[...S.recipes.values()].map(x=>x.provider).filter(Boolean)])].map(x=>h("option",{value:x})));
+  f.serv=h("input",{type:"number",id:"eServ",min:1,value:r.servings||2});f.tmin=h("input",{type:"number",id:"eTmin",value:r.timeMin||""});f.tmax=h("input",{type:"number",id:"eTmax",value:r.timeMax||""});
+  f.kcal=h("input",{type:"number",id:"eKcal",value:r.kcal||""});
+  f.prot=h("select",{id:"eProt"},PROTEINS.map(x=>h("option",{value:x,selected:r.protein===x},x)));f.cui=h("select",{id:"eCui"},h("option",{value:""},"–"),CUISINES.map(x=>h("option",{value:x,selected:r.cuisine===x},x)));
+  const cats=(r.categories||[]).slice();const catBox=h("div",{class:"chips"});chipSet(catBox,CATS,()=>cats,()=>{});
+  const alls=(r.allergens||[]).slice();const allBox=h("div",{class:"chips"});chipSet(allBox,ALLERGENS,()=>alls,()=>{},true);
+  f.ing=h("textarea",{id:"eIng",style:"min-height:180px"});f.ing.value=(r.ingredients||[]).map(ingLine).join("\n");
+  f.steps=h("textarea",{id:"eSteps",style:"min-height:140px"});f.steps.value=(r.steps||[]).map(s=>(s.title?s.title+": ":"")+s.text).join("\n");
+  $("dlgBody").replaceChildren(h("div",{class:"dlgHead"},h("h2",{},isNew?"Rezept anlegen":r.review?"Rezept prüfen":"Rezept bearbeiten"),h("button",{class:"btn sm ghost",type:"button","aria-label":"Schließen",onclick:()=>d.close()},"✕")),
+    field("Titel",f.title),field("Untertitel",f.sub),
+    h("div",{class:"two"},field("Anbieter / Quelle",f.prov),provList,field("Portionen (Mengen gelten dafür)",f.serv),field("Zeit von (min)",f.tmin),field("Zeit bis (min)",f.tmax),field("kcal pro Portion",f.kcal),field("Hauptzutat",f.prot),field("Küche",f.cui)),
+    h("div",{class:"field"},h("span",{class:"lbl"},"Kategorien"),catBox),h("div",{class:"field"},h("span",{class:"lbl"},"Allergene"),allBox),
+    h("div",{class:"field"},h("label",{for:"eIng"},"Zutaten, eine pro Zeile: „250 g Champignons“. Mit * am Ende = „zu Hause“"),f.ing),
+    h("div",{class:"field"},h("label",{for:"eSteps"},"Zubereitung, ein Schritt pro Zeile („Titel: Text“)"),f.steps),
+    h("div",{class:"row"},h("button",{class:"btn primary",type:"button",onclick:async()=>{
+      const t=f.title.value.trim();if(!t){f.title.focus();toast("Bitte einen Titel eingeben.");return;}
+      const out=Object.assign(r,{title:t,subtitle:f.sub.value.trim(),provider:f.prov.value.trim()||"Sonstige",servings:+f.serv.value||2,timeMin:+f.tmin.value||null,timeMax:+f.tmax.value||+f.tmin.value||null,kcal:+f.kcal.value||null,
+        protein:f.prot.value,cuisine:f.cui.value,categories:cats,allergens:alls,ingredients:f.ing.value.split("\n").map(parseIngLine).filter(Boolean),
+        steps:f.steps.value.split("\n").map(s=>s.trim()).filter(Boolean).map(s=>{const m=s.match(/^([^:]{2,40}):\s*(.+)$/);return m?{title:m[1],text:m[2]}:{title:"",text:s};})});
+      out.review=false;if(!out.id)out.id=uniqueId(t);await saveRecipe(out);d.close();toast("Gespeichert");}},r.review?"Geprüft – speichern":"Speichern"),
+      r.card?h("a",{class:"btn sm",href:"api/recipes/"+encodeURIComponent(r.id)+"/card",target:"_blank",rel:"noopener"},"Originalkarte daneben öffnen"):null));
+  if(!d.open)d.showModal();}
+function uniqueId(title){let base=slug(title),id=base,i=2;while(S.recipes.has(id))id=base+"-"+(i++);return id;}
+
+/* ============ Import ============ */
+let readerChoice="local";
+function setupImportUi(){const i=S.info;const cl=!!i?.readers?.claude;readerChoice=i?.defaultReader||"local";
+  for(const box of [$("readerPick"),$("readerPick2")]){box.replaceChildren(...[["local","Kostenlos (lokal)"],["claude","Claude"+(cl?"":" – kein API-Schlüssel")]].map(([v,l])=>{
+    const b=h("button",{type:"button",class:"chip","aria-pressed":String(readerChoice===v),disabled:v==="claude"&&!cl},l);
+    b.onclick=()=>{readerChoice=v;setupImportUi();};return b;}));}
+  $("importNote").textContent=readerChoice==="claude"?"Claude liest Scans, Fotos und PDFs sehr genau. Kosten: wenige Cent pro Karte über deinen Anthropic-Schlüssel ("+(i?.claudeModel||"")+")."
+    :"Der kostenlose Leser läuft auf deinem Home Assistant: PDFs mit Text sehr gut, Scans und Fotos per Texterkennung. Bitte jede Karte kurz prüfen.";
+  $("haRow").hidden=!i?.homeAssistant;}
+const queue=[];let busy=false;
+function addFiles(files){for(const f of files)queue.push({file:f,status:"wartet",cls:"",reader:readerChoice});renderQueue();runQueue();}
+function renderQueue(){$("queue").replaceChildren(...queue.map(it=>h("div",{class:"qitem"},
+  h("div",{style:"min-width:0"},h("div",{style:"overflow-wrap:anywhere"},it.file.name),
+    it.rid?h("a",{href:"#rezepte",class:"small",onclick:e=>{e.preventDefault();editRecipe(S.recipes.get(it.rid));}},"Prüfen: "+it.title):null,
+    it.dupId?h("span",{class:"small"}," ",h("button",{type:"button",class:"btn sm",onclick:()=>{it.done=false;it.replace=true;it.dupId=null;it.status="wartet";it.cls="";renderQueue();runQueue();}},"Trotzdem ersetzen")):null),
+  h("span",{class:"st "+it.cls},it.status))));}
+async function runQueue(){if(busy)return;busy=true;
+  for(const it of queue){if(it.done)continue;it.status=it.reader==="claude"?"Claude liest …":"lese …";renderQueue();
+    try{const fd=new FormData();fd.append("file",it.file);fd.append("reader",it.reader);if(it.replace)fd.append("replace","true");
+      const res=await api("import",{method:"POST",body:fd});const r=res.recipe;S.recipes.set(r.id,r);
+      it.status="zu prüfen · "+r.ingredients.length+" Zutaten"+(res.warnings?.length?" · "+res.warnings[0]:"");it.cls=res.warnings?.length?"err":"ok";it.rid=r.id;it.title=r.title;renderAll();}
+    catch(e){if(e.status===409){it.status="schon im Katalog: "+e.body.title;it.cls="err";it.dupId=e.body.id;}else{it.cls="err";it.status=e.message;}}
+    it.done=true;renderQueue();}
+  busy=false;$("status").textContent=S.recipes.size+" Rezepte im Katalog";}
+async function pasteImport(){const txt=$("pasteTxt").value.trim();const src=$("pasteSrc").value.trim();if(txt.length<40){toast("Bitte den Rezepttext einfügen.");return;}
+  const b=$("btnPaste");b.disabled=true;b.textContent=readerChoice==="claude"?"Claude liest …":"Lese …";
+  try{const res=await api("import-text",jsonOpt("POST",{text:txt,source:src,reader:readerChoice}));S.recipes.set(res.recipe.id,res.recipe);$("pasteTxt").value="";renderAll();editRecipe(res.recipe);
+    if(res.warnings?.length)toast(res.warnings[0]);}
+  catch(e){toast(e.message);}b.disabled=false;b.textContent="Rezept übernehmen";}
+async function reread(id){const b=document.getElementById("btnReread");if(b){b.disabled=true;b.textContent="Claude liest …";}
+  try{const fd=new FormData();fd.append("reader","claude");const res=await api("recipes/"+encodeURIComponent(id)+"/reread",{method:"POST",body:fd});
+    S.recipes.set(id,res.recipe);renderAll();editRecipe(res.recipe);toast("Neu eingelesen – bitte prüfen");}
+  catch(e){toast(e.message);if(b){b.disabled=false;b.textContent="Mit Claude neu einlesen";}}}
+
+/* ============ Gewürze ============ */
+function loadSpices(doc){SPICES.length=0;for(const s of doc.spices||[]){const names=[s.name.replace(/\s*\(\?\)\s*/,"")];const m=s.name.match(/^(.*?)\s*\((.+)\)$/);if(m&&m[2]!=="?")names.splice(0,1,m[1],m[2]);
+  for(const n of names)SPICES.push([n.replace(/^Gewürzmischung\s+/,""),s.ingredients||s.note||"",s.alternative?.url||"",s.alternative?.name||""]);}}
+
+/* ============ Sonstiges UI ============ */
+function renderSpices(){$("spiceList").replaceChildren(...SPICES.map(s=>h("div",{style:"padding:5px 0;border-top:1px solid var(--line)"},h("b",{},s[0]),": "+s[1],s[2]&&/^https:\/\//.test(s[2])?[" · ",h("a",{href:s[2],target:"_blank",rel:"noopener"},s[3])]:"")));}
+function renderAll(){if(!S.state)return;if(!prefsBuilt)buildPrefs();renderWeek();renderShop();renderRecipes();
+  if(document.activeElement!==$("pantry"))$("pantry").value=(S.state.pantry||[]).join("\n");}
+function route(){const v=(location.hash||"#woche").slice(1);const ok=["woche","einkauf","rezepte","import"].includes(v)?v:"woche";
+  for(const s of document.querySelectorAll(".view"))s.hidden=s.id!=="v-"+ok;
+  for(const a of document.querySelectorAll("nav.tabs a")){if(a.dataset.view===ok)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current");}}
+window.addEventListener("hashchange",route);
+$("btnPlan").onclick=()=>makePlan(false);$("btnReroll").onclick=()=>makePlan(true);
+$("q").oninput=e=>{filt.q=e.target.value;renderRecipes();};$("btnNew").onclick=()=>editRecipe(null);
+$("btnCopy").onclick=()=>{const t=shopText();const fb=()=>{const ta=$("copyFallback");ta.hidden=false;ta.value=t;ta.style.minHeight="220px";ta.focus();ta.select();toast("Text markiert – jetzt kopieren");};
+  try{navigator.clipboard.writeText(t).then(()=>toast("Einkaufszettel kopiert"),fb);}catch{fb();}};
+$("btnUncheck").onclick=()=>{S.state.checked={};saveState();renderShop();};
+$("btnPantry").onclick=()=>{S.state.pantry=$("pantry").value.split("\n").map(s=>s.trim()).filter(Boolean);saveState();renderAll();toast("Vorrat gespeichert");};
+$("btnPaste").onclick=pasteImport;
+$("btnHa").onclick=async()=>{const sel=$("haList");if(!sel.value){toast("Bitte eine Liste wählen.");return;}
+  const {items}=shopData();const list=items.filter(e=>!e.pantry&&!S.state.checked[e.id]).map(e=>(e.need>0?fmtQty(e.need,e.unit)+" ":"")+e.name.replace(/\s+\d+(,\d+)*$/,""));
+  if(!list.length){toast("Nichts offen auf dem Zettel.");return;}
+  S.state.haTodo=sel.value;saveState();$("btnHa").disabled=true;
+  try{const r=await api("ha/todo",jsonOpt("POST",{entity_id:sel.value,items:list}));toast(r.added+" Posten an Home Assistant gesendet");}catch(e){toast(e.message);}
+  $("btnHa").disabled=false;};
+async function fillHaLists(){if(!S.info?.homeAssistant)return;try{const l=await api("ha/todo");const sel=$("haList");
+  sel.replaceChildren(h("option",{value:""},l.length?"Liste wählen …":"Keine Aufgabenliste gefunden"),...l.map(x=>h("option",{value:x.entity_id,selected:x.entity_id===S.state.haTodo},x.name)));}catch{}}
+const drop=$("drop");["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("over");}));
+["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("over");}));
+drop.addEventListener("drop",e=>{if(e.dataTransfer?.files?.length)addFiles([...e.dataTransfer.files]);});
+$("fileIn").onchange=e=>{addFiles([...e.target.files]);e.target.value="";};
+$("jsonIn").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;const fd=new FormData();fd.append("file",f);
+  try{const r=await api("restore",{method:"POST",body:fd});await loadAll();toast(r.imported+" Rezepte eingelesen");}catch(err){toast(err.message);}};
+route();initStore().then(fillHaLists);
+</script>
+</body>
+</html>
