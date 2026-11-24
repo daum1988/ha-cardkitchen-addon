@@ -105,6 +105,13 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .dayList{display:grid;gap:10px}
 .dayCard{display:grid;grid-template-columns:58px minmax(0,1fr);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 .dayCard.cooked{opacity:.62}
+.dayCard.hasImg{grid-template-columns:58px minmax(0,1fr) 132px}
+.dayImg{width:100%;height:100%;min-height:100%;object-fit:cover;display:block;cursor:pointer}
+@media (max-width:520px){.dayCard.hasImg{grid-template-columns:52px minmax(0,1fr) 88px}}
+.rimg{display:block;margin:-14px -14px 4px;width:calc(100% + 28px);max-width:none;aspect-ratio:3/2;object-fit:cover;border-radius:var(--r) var(--r) 0 0;background:var(--surface-2)}
+.hero{display:block;width:100%;aspect-ratio:3/2;max-height:340px;object-fit:cover;border-radius:12px;background:var(--surface-2)}
+.imgEdit{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.imgEdit img{width:150px;aspect-ratio:3/2;object-fit:cover;border-radius:8px;background:var(--surface-2)}
 .dayLabel{background:var(--surface-2);display:grid;place-content:center;text-align:center;padding:10px 4px}
 .dayLabel b{font-family:var(--f-display);font-size:20px}
 .dayLabel span{font-size:11px;color:var(--muted)}
@@ -281,8 +288,12 @@ ol.steps b{display:block}
       </div>
       <div class="panel"><h3>Sicherung</h3>
         <p class="small muted" style="margin:0 0 8px">Alle Rezepte als JSON-Datei sichern oder wieder einlesen. Die Originalkarten liegen im Add-on-Ordner und sind in den Home-Assistant-Backups enthalten.</p>
-        <div class="row"><a class="btn sm" href="api/export" download="kartenkueche-rezepte.json">Sicherung speichern</a>
-          <label class="btn sm" for="jsonIn">Sicherung einlesen</label><input type="file" id="jsonIn" accept=".json,application/json" hidden></div>
+        <div class="row"><a class="btn sm" href="api/export.zip" download="kartenkueche-sicherung.zip">Sicherung mit Fotos (ZIP)</a>
+          <a class="btn sm ghost" href="api/export" download="kartenkueche-rezepte.json">Nur Rezepte (JSON)</a></div>
+        <div class="row" style="margin-top:8px"><label class="btn sm" for="jsonIn">Sicherung einlesen (.zip oder .json)</label><input type="file" id="jsonIn" accept=".json,.zip,application/json,application/zip" hidden>
+          <label class="btn sm ghost" for="imgDirIn">Foto-Ordner nachladen</label><input type="file" id="imgDirIn" webkitdirectory multiple hidden></div>
+        <p class="small muted" style="margin:8px 0 0">„Foto-Ordner nachladen“ ordnet Bilder wie <span class="mono">bilder/&lt;rezept-id&gt;.jpg</span> den Rezepten zu, falls die ZIP-Datei für die Verbindung zu groß ist.</p>
+        <div id="restoreNote" class="small" style="margin-top:6px"></div>
       </div>
       <div class="panel"><h3>Gewürzmischungen</h3>
         <p class="small muted" style="margin:0 0 8px">Zutaten der HelloFresh-Mischungen, Quelle: <a href="https://github.com/Schischu/hello_fresh_gewuerze" target="_blank" rel="noopener">Schischu/hello_fresh_gewuerze</a> (GPL-3.0). Auf dem Einkaufszettel steht, was drin ist.</p>
@@ -528,14 +539,15 @@ function renderWeek(){const plan=S.state.plan;const list=$("dayList");const recs
     if(!r)return h("div",{class:"dayCard"},lbl,h("div",{class:"dayBody"},h("span",{class:"muted"},"Kein Rezept"),h("div",{class:"dayActions"},h("button",{class:"btn sm",type:"button",onclick:()=>swapDay(d.day)},"Rezept suchen"))));
     const mine=[...ag.values()].filter(e=>!e.pantry&&e.recs.has(r.id)&&e.recs.size>1&&e.aisle!=="Gewürze");
     const shares=mine.slice(0,5).map(e=>{const od=plan.days.filter(x=>x.recipeId!==r.id&&e.recs.has(x.recipeId)).map(x=>x.day);return h("span",{class:"share"},h("b",{},e.name.replace(/\s+\d+(,\d+)*$/,"")),"  auch "+od.join(", "));});
-    return h("div",{class:"dayCard"+(d.cooked?" cooked":"")},lbl,h("div",{class:"dayBody"},
+    const pic=r.image?h("img",{class:"dayImg",src:imgUrl(r,true),alt:"",loading:"lazy",onclick:()=>openRecipe(r.id)}):null;
+    return h("div",{class:"dayCard"+(d.cooked?" cooked":"")+(pic?" hasImg":"")},lbl,h("div",{class:"dayBody"},
       h("h3",{onclick:()=>openRecipe(r.id)},r.title),
       h("div",{class:"meta"},h("span",{class:"prov "+provClass(r.provider)},r.provider||"Rezept"),timeText(r)&&h("span",{class:"mono"},timeText(r)),r.kcal&&h("span",{class:"mono"},r.kcal+" kcal"),h("span",{},r.protein||"")),
       shares.length?h("div",{class:"shared"},shares):null,
       h("div",{class:"dayActions"},
         h("button",{class:"btn sm"+(d.locked?" on":""),type:"button","aria-pressed":String(!!d.locked),onclick:()=>{d.locked=!d.locked;saveState();renderWeek();}},d.locked?"Fixiert":"Fixieren"),
         h("button",{class:"btn sm",type:"button",onclick:()=>swapDay(d.day)},"Tauschen"),
-        h("button",{class:"btn sm"+(d.cooked?" on":""),type:"button",onclick:()=>toggleCooked(d,r)},d.cooked?"Gekocht ✓":"Gekocht"))));}));
+        h("button",{class:"btn sm"+(d.cooked?" on":""),type:"button",onclick:()=>toggleCooked(d,r)},d.cooked?"Gekocht ✓":"Gekocht"))),pic);}));
   renderRadar(ag,recs);}
 function toggleCooked(d,r){d.cooked=!d.cooked;saveState();if(d.cooked){const c=Object.assign({},r);c.lastCooked=Date.now();c.cookedCount=(r.cookedCount||0)+1;saveRecipe(c);}else renderAll();}
 function renderRadar(ag,recs){const ids=new Set(recs.map(r=>r.id));
@@ -585,6 +597,7 @@ function renderRecipes(){$("cntRec").textContent=S.recipes.size?String(S.recipes
     .sort((a,b)=>a.title.localeCompare(b.title,"de"));
   if(!all.length){$("recGrid").replaceChildren(h("div",{class:"empty",style:"grid-column:1/-1"},h("b",{},"Der Katalog ist leer"),h("a",{class:"btn primary",href:"#import"},"Karten einlesen")));return;}
   $("recGrid").replaceChildren(...(list.length?list.map(r=>h("button",{type:"button",class:"rcard",onclick:()=>openRecipe(r.id)},
+    r.image?h("img",{class:"rimg",src:imgUrl(r,true),alt:"",loading:"lazy"}):null,
     h("div",{class:"row",style:"justify-content:space-between"},h("span",{class:"prov "+provClass(r.provider)},r.provider||"Rezept"),r.review?h("span",{class:"badge"},"zu prüfen"):null),h("h3",{},r.title),r.subtitle?h("div",{class:"sub"},r.subtitle):null,
     h("div",{class:"meta"},timeText(r)&&h("span",{class:"mono"},timeText(r)),r.kcal&&h("span",{class:"mono"},r.kcal+" kcal"),r.protein&&h("span",{},r.protein)),
     h("div",{class:"chips"},rTags(r).slice(0,4).map(t=>h("span",{class:"tag"},t))))):[h("p",{class:"muted"},"Keine Treffer.")]));}
@@ -594,6 +607,7 @@ function openRecipe(id){const r=S.recipes.get(id);if(!r)return;const d=$("dlg");
   $("dlgBody").replaceChildren(
     h("div",{class:"dlgHead"},h("div",{},h("span",{class:"prov "+provClass(r.provider)},r.provider||"Rezept"),h("h2",{},r.title),r.subtitle?h("div",{class:"muted"},r.subtitle):null),
       h("button",{class:"btn sm ghost",type:"button","aria-label":"Schließen",onclick:()=>d.close()},"✕")),
+    r.image?h("img",{class:"hero",src:imgUrl(r,false),alt:"Foto: "+r.title}):null,
     r.review?h("div",{class:"note row",style:"justify-content:space-between"},h("span",{},"Automatisch eingelesen ("+(r.reader==="claude"?"Claude":"kostenloser Leser")+"). Bitte einmal prüfen."),h("button",{class:"btn sm",type:"button",onclick:()=>editRecipe(r)},"Jetzt prüfen")):null,
     h("div",{class:"meta"},timeText(r)&&h("span",{class:"mono"},timeText(r)),r.kcal&&h("span",{class:"mono"},r.kcal+" kcal/Portion"),h("span",{},r.protein||""),r.cookedCount?h("span",{},r.cookedCount+"× gekocht"):null),
     h("div",{class:"chips"},rTags(r).map(t=>h("span",{class:"tag"},t))),stars,
@@ -613,6 +627,15 @@ function openRecipe(id){const r=S.recipes.get(id);if(!r)return;const d=$("dlg");
     r.steps?.length?h("div",{},h("div",{class:"eyebrow",style:"margin-bottom:6px"},"Zubereitung"),h("ol",{class:"steps"},r.steps.map(s=>h("li",{},s.title?h("b",{},s.title):null,s.text)))):null);
   if(plan){const free=plan.days.find(x=>!x.recipeId);if(free)sel.value=free.day;}
   if(!d.open)d.showModal();}
+function imgUrl(r,thumb){return "api/recipes/"+encodeURIComponent(r.id)+"/image?"+(thumb?"thumb=1&":"")+"v="+(r.updatedAt||0);}
+function imageEditor(r){const cur=S.recipes.get(r.id)||r;const inp=h("input",{type:"file",id:"eImg",accept:"image/jpeg,image/png,image/webp",hidden:true});
+  inp.onchange=async()=>{const f=inp.files[0];if(!f)return;const fd=new FormData();fd.append("file",f);
+    try{const saved=await api("recipes/"+encodeURIComponent(r.id)+"/image",{method:"PUT",body:fd});S.recipes.set(saved.id,saved);renderAll();toast("Bild gespeichert");
+      const box=document.getElementById("imgBox");if(box)box.replaceWith(imageEditor(saved));}catch(e){toast(e.message);}};
+  return h("div",{class:"imgEdit",id:"imgBox"},cur.image?h("img",{src:imgUrl(cur,true),alt:""}):h("span",{class:"small muted"},"Kein Foto"),
+    h("label",{class:"btn sm",for:"eImg"},cur.image?"Foto ersetzen":"Foto hinzufügen"),inp,
+    cur.image?h("button",{class:"btn sm ghost",type:"button",onclick:async()=>{try{const saved=await api("recipes/"+encodeURIComponent(r.id)+"/image",{method:"DELETE"});
+      S.recipes.set(saved.id,saved);renderAll();document.getElementById("imgBox").replaceWith(imageEditor(saved));}catch(e){toast(e.message);}}},"Foto entfernen"):null);}
 function ingLine(i){const [q,u]=[i.qty,normUnit(i.unit)];return (q!=null?fmtNum(q)+" ":"")+(u?u+" ":"")+i.name+(i.pantry?" *":"");}
 function parseIngLine(line){line=line.replace(/^[•\-–*]\s*/,"").trim();if(!line)return null;let pantry=false;if(/\*$/.test(line)){pantry=true;line=line.replace(/\s*\*$/,"");}
   const m=line.match(/^([\d.,/½¼¾]+(?:\s*[–-]\s*[\d.,]+)?)?\s*(g|kg|ml|l|EL|TL|Prise|Prisen|Stk|Stück|Stückchen|Stange|Stangen|Zehe|Zehen|Bund|Dose|Dosen|Packung|Päckchen|Pck|Becher|Knolle|Kopf|Glas|Beutel|Scheiben?|Handvoll)?\.?\s+(.+)$/i);
@@ -634,6 +657,7 @@ function editRecipe(r){const isNew=!r;r=r?JSON.parse(JSON.stringify(r)):{id:"",t
   f.ing=h("textarea",{id:"eIng",style:"min-height:180px"});f.ing.value=(r.ingredients||[]).map(ingLine).join("\n");
   f.steps=h("textarea",{id:"eSteps",style:"min-height:140px"});f.steps.value=(r.steps||[]).map(s=>(s.title?s.title+": ":"")+s.text).join("\n");
   $("dlgBody").replaceChildren(h("div",{class:"dlgHead"},h("h2",{},isNew?"Rezept anlegen":r.review?"Rezept prüfen":"Rezept bearbeiten"),h("button",{class:"btn sm ghost",type:"button","aria-label":"Schließen",onclick:()=>d.close()},"✕")),
+    r.id?imageEditor(r):null,
     field("Titel",f.title),field("Untertitel",f.sub),
     h("div",{class:"two"},field("Anbieter / Quelle",f.prov),provList,field("Portionen (Mengen gelten dafür)",f.serv),field("Zeit von (min)",f.tmin),field("Zeit bis (min)",f.tmax),field("kcal pro Portion",f.kcal),field("Hauptzutat",f.prot),field("Küche",f.cui)),
     h("div",{class:"field"},h("span",{class:"lbl"},"Kategorien"),catBox),h("div",{class:"field"},h("span",{class:"lbl"},"Allergene"),allBox),
@@ -715,7 +739,15 @@ const drop=$("drop");["dragenter","dragover"].forEach(ev=>drop.addEventListener(
 drop.addEventListener("drop",e=>{if(e.dataTransfer?.files?.length)addFiles([...e.dataTransfer.files]);});
 $("fileIn").onchange=e=>{addFiles([...e.target.files]);e.target.value="";};
 $("jsonIn").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;const fd=new FormData();fd.append("file",f);
-  try{const r=await api("restore",{method:"POST",body:fd});await loadAll();toast(r.imported+" Rezepte eingelesen");}catch(err){toast(err.message);}};
+  $("restoreNote").textContent="Lese Sicherung …";
+  try{const r=await api("restore",{method:"POST",body:fd});await loadAll();const t=r.imported+" Rezepte"+(r.images?" und "+r.images+" Fotos":"")+" eingelesen";$("restoreNote").textContent=t;toast(t);}
+  catch(err){$("restoreNote").textContent=err.status===413?"Die Datei ist für die Verbindung zu groß. Lies erst die JSON-Datei ein und lade dann den Foto-Ordner nach.":err.message;}};
+$("imgDirIn").onchange=async e=>{const files=[...e.target.files].filter(f=>/\.(jpe?g|png|webp)$/i.test(f.name)&&!/\.thumb\./i.test(f.name));e.target.value="";
+  const byName=new Map();for(const r of S.recipes.values()){byName.set(r.id,r.id);if(r.image)byName.set(String(r.image).split("/").pop().replace(/\.[a-z]+$/i,""),r.id);}
+  let ok=0,miss=0;for(const [i,f] of files.entries()){const id=byName.get(f.name.replace(/\.[a-z]+$/i,""));if(!id){miss++;continue;}
+    $("restoreNote").textContent="Fotos: "+(i+1)+" / "+files.length;const fd=new FormData();fd.append("file",f);fd.append("source","import");
+    try{const saved=await api("recipes/"+encodeURIComponent(id)+"/image",{method:"PUT",body:fd});S.recipes.set(saved.id,saved);ok++;}catch{miss++;}}
+  renderAll();$("restoreNote").textContent=ok+" Fotos zugeordnet"+(miss?", "+miss+" ohne passendes Rezept":"");};
 route();initStore().then(fillHaLists);
 </script>
 </body>

@@ -1,5 +1,5 @@
 name: Kartenküche
-version: "0.1.0"
+version: "0.2.0"
 slug: cardkitchen
 description: Rezeptkarten einlesen, Wochenplan mit Resteverwertung und Einkaufszettel erstellen
 url: https://github.com/daum1988/ha-cardkitchen-addon

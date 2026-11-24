@@ -36,6 +36,13 @@ Karte später mit „Mit Claude neu einlesen“ noch einmal genauer gelesen werd
 Tipps für Fotos: Karte flach hinlegen, gerade von oben, gutes Licht, Vorder- und Rückseite als
 getrennte Fotos oder gemeinsam als PDF-Scan.
 
+## Fotos
+
+Beim Einlesen übernimmt Kartenküche das Foto des fertigen Gerichts aus der Karte: bei PDFs mit
+Textebene das eingebettete Foto in voller Qualität, bei Scans und Fotos wird die Fotofläche
+ausgeschnitten. Wurde kein Foto erkannt oder passt der Ausschnitt nicht, lässt sich in der
+Bearbeitung ein eigenes Foto hochladen oder das vorhandene entfernen.
+
 ## Optionen
 
 | Option | Bedeutung |
@@ -68,9 +75,11 @@ Assistant (z. B. die Einkaufsliste).
 
 ## Deine Daten
 
-Rezepte, Plan und Originalkarten liegen ausschließlich im privaten Datenordner des Add-ons auf deinem
+Rezepte, Plan, Fotos und Originalkarten liegen ausschließlich im privaten Datenordner des Add-ons auf deinem
 Home Assistant und sind in dessen Backups enthalten. Sie sind nie Teil dieses Repositorys. Über
-**Sicherung speichern** bekommst du zusätzlich alle Rezepte als JSON-Datei.
+**Sicherung mit Fotos (ZIP)** bekommst du zusätzlich alle Rezepte samt Fotos als Datei. Beim
+Einlesen sehr großer Sicherungen über einen Tunnel (z. B. Cloudflare, Limit 100 MB pro Anfrage) die
+JSON-Datei und den Foto-Ordner getrennt einlesen („Foto-Ordner nachladen“) oder im Heimnetz arbeiten.
 
 Mit dem kostenlosen Leser verlässt nichts dein Netzwerk. Mit Claude wird die jeweilige Karte bzw. der
 eingefügte Text an die Anthropic-API gesendet.

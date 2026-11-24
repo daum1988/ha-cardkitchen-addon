@@ -58,6 +58,21 @@ SCHEMA = {
                 "additionalProperties": False,
             },
         },
+        "photo": {
+            "anyOf": [
+                {"type": "null"},
+                {
+                    "type": "object",
+                    "properties": {
+                        "page": {"type": "integer"},
+                        "left": {"type": "number"}, "top": {"type": "number"},
+                        "right": {"type": "number"}, "bottom": {"type": "number"},
+                    },
+                    "required": ["page", "left", "top", "right", "bottom"],
+                    "additionalProperties": False,
+                },
+            ]
+        },
         "steps": {
             "type": "array",
             "items": {
@@ -69,7 +84,7 @@ SCHEMA = {
         },
     },
     "required": ["title", "subtitle", "provider", "servings", "timeMin", "timeMax", "kcal", "protein",
-                 "categories", "cuisine", "allergens", "ingredients", "steps"],
+                 "categories", "cuisine", "allergens", "ingredients", "photo", "steps"],
     "additionalProperties": False,
 }
 
@@ -85,7 +100,8 @@ Regeln:
 - qty: Zahl (Brüche dezimal, Spannen als Mittelwert) oder null bei "nach Geschmack".
 - categories: 1–4 passende Kategorien. cuisine: die passendste Küche.
 - steps: alle Zubereitungsschritte in Reihenfolge, Titel (falls vorhanden) und Text wörtlich, ohne Zeilenumbrüche.
-- kcal: pro Portion. Zeiten in Minuten."""
+- kcal: pro Portion. Zeiten in Minuten.
+- photo: Lage des Fotos vom fertigen Gericht (nur das Foto, ohne Logo, Titel, Zutaten-Symbole oder Rand) als Anteile der Seite von 0 bis 1 (left/top/right/bottom) und die Seitennummer ab 1; null, wenn es kein Gerichtsfoto gibt oder nur Text vorliegt."""
 
 
 def _content_for_file(path: Path, filename: str) -> list[dict]:
@@ -158,10 +174,13 @@ def _call(api_key: str, model: str, content: list[dict]) -> dict:
     return data
 
 
-def read_file(path: Path, filename: str, api_key: str, model: str, fallback_title: str) -> dict:
+def read_file(path: Path, filename: str, api_key: str, model: str, fallback_title: str) -> tuple[dict, dict | None]:
+    """Liest die Karte; gibt das Rezept und die von Claude genannte Lage des Gerichtsfotos zurück."""
     p, fn = _shrink_image(path, filename)
     content = _content_for_file(p, fn) + [{"type": "text", "text": INSTRUCTIONS}]
-    return P.clean_recipe(_call(api_key, model, content), fallback_title)
+    data = _call(api_key, model, content)
+    photo = data.get("photo") if isinstance(data.get("photo"), dict) else None
+    return P.clean_recipe(data, fallback_title), photo
 
 
 def read_text(text: str, source: str, api_key: str, model: str) -> dict:

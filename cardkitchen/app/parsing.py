@@ -288,7 +288,8 @@ def clean_recipe(x: dict, fallback_title: str = "Rezept") -> dict:
         if isinstance(s, dict) and str(s.get("text") or "").strip():
             steps.append({"title": str(s.get("title") or "")[:80], "text": str(s["text"]).strip()[:2000]})
     r["steps"] = steps
-    for k in ("rating", "lastCooked", "cookedCount", "review", "card", "source", "importedAt", "updatedAt", "reader"):
+    for k in ("rating", "lastCooked", "cookedCount", "review", "card", "source", "importedAt", "updatedAt", "reader",
+              "image", "imageSource"):
         if k in x and x[k] is not None:
             r[k] = x[k]
     return r

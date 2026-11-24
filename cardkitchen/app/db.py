@@ -13,6 +13,8 @@ class Store:
         self.dir = data_dir
         self.cards = data_dir / "cards"
         self.cards.mkdir(parents=True, exist_ok=True)
+        self.images = data_dir / "images"
+        self.images.mkdir(parents=True, exist_ok=True)
         self._lock = threading.Lock()
         self._db = sqlite3.connect(data_dir / "cardkitchen.db", check_same_thread=False)
         self._db.execute("PRAGMA journal_mode=WAL")
@@ -50,6 +52,10 @@ class Store:
         if rec and rec.get("card"):
             f = self.cards / rec["card"]
             if f.is_file() and f.parent == self.cards:
+                f.unlink()
+        for name in (f"{rid}.jpg", f"{rid}.thumb.jpg"):
+            f = self.images / name
+            if f.is_file():
                 f.unlink()
 
     def ids(self) -> set[str]:
