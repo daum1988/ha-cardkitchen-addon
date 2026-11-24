@@ -23,7 +23,7 @@ from . import reader_claude, reader_local
 from .db import Store
 from .text_utils import title_from_filename
 
-VERSION = "0.2.1"
+VERSION = "0.2.2"
 APP_DIR = Path(__file__).parent
 DATA_DIR = Path(os.environ.get("CK_DATA_DIR", "/data"))
 OPTIONS_FILE = Path(os.environ.get("CK_OPTIONS", str(DATA_DIR / "options.json")))

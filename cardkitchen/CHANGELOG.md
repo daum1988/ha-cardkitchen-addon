@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2
+
+- Wochenplan: Rezepte mit gleichem Titel gelten als dasselbe Gericht und kommen nicht mehr zweimal
+  in eine Woche (auch nicht beim Tauschen).
+- Rezepte: neuer Filter „Gleicher Titel“ zum Finden doppelt benannter Rezepte; der Filter
+  „Zu prüfen“ wird jetzt angezeigt.
+
 ## 0.2.1
 
 - Große Sicherungen (ZIP mit Fotos) werden in Teilen zu 4 MB hochgeladen. Damit klappt das Einlesen

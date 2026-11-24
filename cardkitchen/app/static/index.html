@@ -452,15 +452,20 @@ function evalSet(recs,jit){const p=prefsOf();const opt=p.rest??1;let s=0;
   for(const k in cat)if(cat[k]>1)s-=.45*(cat[k]-1);
   if(veg<p.vegMin)s-=4*(p.vegMin-veg);
   return s;}
+function titleKey(r){return slug(r.title||r.id);}
+function uniqueByTitle(list,taken){const seen=new Set(taken||[]);return list.filter(r=>{const k=titleKey(r);if(seen.has(k))return false;seen.add(k);return true;});}
 function optimize(n,locked,cands,jit){
-  const pool=cands.filter(c=>!locked.some(l=>l.id===c.id));const need=n-locked.length;
-  if(need<=0)return locked.slice(0,n);if(pool.length<=need)return locked.concat(pool);
+  // Gleiche Titel gelten als dasselbe Gericht (z. B. zwei Kartenvarianten mit gleichem Namen).
+  const lockedKeys=locked.map(titleKey);
+  const pool=cands.filter(c=>!lockedKeys.includes(titleKey(c)));const need=n-locked.length;
+  if(need<=0)return locked.slice(0,n);
+  if(uniqueByTitle(pool).length<=need)return locked.concat(uniqueByTitle(pool.slice().sort(()=>Math.random()-.5)));
   let best=null,bestS=-Infinity;
   for(let rs=0;rs<14;rs++){
-    const sh=pool.slice().sort(()=>Math.random()-.5);let cur=sh.slice(0,need);let curS=evalSet(locked.concat(cur),jit);
+    const sh=uniqueByTitle(pool.slice().sort(()=>Math.random()-.5));let cur=sh.slice(0,need);let curS=evalSet(locked.concat(cur),jit);
     for(let round=0;round<15;round++){let improved=false;
-      for(let i=0;i<cur.length;i++){const inSet=new Set(cur.map(x=>x.id));let bi=null,bs=curS;
-        for(const c of pool){if(inSet.has(c.id))continue;const t=cur.slice();t[i]=c;const sc=evalSet(locked.concat(t),jit);if(sc>bs+1e-9){bs=sc;bi=c;}}
+      for(let i=0;i<cur.length;i++){const inSet=new Set(cur.filter((x,j)=>j!==i).map(titleKey));let bi=null,bs=curS;
+        for(const c of pool){if(inSet.has(titleKey(c))||c===cur[i])continue;const t=cur.slice();t[i]=c;const sc=evalSet(locked.concat(t),jit);if(sc>bs+1e-9){bs=sc;bi=c;}}
         if(bi){cur[i]=bi;curS=bs;improved=true;}}
       if(!improved)break;}
     if(curS>bestS){bestS=curS;best=cur;}}
@@ -481,8 +486,9 @@ function makePlan(reroll){const p=prefsOf();const days=DAYS.filter(d=>p.days.inc
 const swapSeen={};
 function swapDay(day){const plan=S.state.plan;const slot=plan.days.find(d=>d.day===day);const others=plan.days.filter(d=>d!==slot&&d.recipeId).map(d=>S.recipes.get(d.recipeId)).filter(Boolean);
   const seen=swapSeen[day]||(swapSeen[day]=new Set());if(slot.recipeId)seen.add(slot.recipeId);
-  let pool=candidates().filter(c=>!others.some(o=>o.id===c.id)&&!seen.has(c.id));
-  if(!pool.length){seen.clear();if(slot.recipeId)seen.add(slot.recipeId);pool=candidates().filter(c=>!others.some(o=>o.id===c.id)&&c.id!==slot.recipeId);}
+  const otherKeys=new Set(others.map(titleKey));
+  let pool=candidates().filter(c=>!otherKeys.has(titleKey(c))&&!seen.has(c.id));
+  if(!pool.length){seen.clear();if(slot.recipeId)seen.add(slot.recipeId);pool=candidates().filter(c=>!otherKeys.has(titleKey(c))&&c.id!==slot.recipeId);}
   if(!pool.length){toast("Kein anderes passendes Rezept vorhanden.");return;}
   const ranked=pool.map(c=>[c,evalSet(others.concat([c]))]).sort((a,b)=>b[1]-a[1]);
   slot.recipeId=ranked[0][0].id;slot.cooked=false;saveState();renderAll();}
@@ -588,11 +594,13 @@ function shopText(){const {items}=shopData();const buy=items.filter(e=>!e.pantry
 /* ============ Rezepte ============ */
 const filt={q:"",chips:[]};
 function renderRecipes(){$("cntRec").textContent=S.recipes.size?String(S.recipes.size):"";
-  const all=[...S.recipes.values()];const facets=[...new Set([...(all.some(r=>r.review)?["Zu prüfen"]:[]),"HelloFresh","Marley Spoon","Dinnerly",...all.map(r=>r.provider).filter(Boolean),...PROTEINS,...CATS,...CUISINES,...DERIVED])].filter(f=>all.some(r=>r.provider===f||r.protein===f||rTags(r).includes(f)));
+  const all=[...S.recipes.values()];const cnt={};for(const r of all){const k=titleKey(r);cnt[k]=(cnt[k]||0)+1;}
+  const special=[...(all.some(r=>r.review)?["Zu prüfen"]:[]),...(Object.values(cnt).some(v=>v>1)?["Gleicher Titel"]:[])];
+  const facets=[...special,...[...new Set(["HelloFresh","Marley Spoon","Dinnerly",...all.map(r=>r.provider).filter(Boolean),...PROTEINS,...CATS,...CUISINES,...DERIVED])].filter(f=>all.some(r=>r.provider===f||r.protein===f||rTags(r).includes(f)))];
   $("fChips").replaceChildren(...facets.map(f=>{const b=h("button",{type:"button",class:"chip","aria-pressed":String(filt.chips.includes(f))},f);
     b.onclick=()=>{const i=filt.chips.indexOf(f);if(i>=0)filt.chips.splice(i,1);else filt.chips.push(f);renderRecipes();};return b;}));
   const q=filt.q.trim().toLowerCase();
-  const list=all.filter(r=>filt.chips.every(f=>f==="Zu prüfen"?r.review:(r.provider===f||r.protein===f||rTags(r).includes(f))))
+  const list=all.filter(r=>filt.chips.every(f=>f==="Zu prüfen"?r.review:f==="Gleicher Titel"?cnt[titleKey(r)]>1:(r.provider===f||r.protein===f||rTags(r).includes(f))))
     .filter(r=>!q||(r.title+" "+(r.subtitle||"")+" "+(r.ingredients||[]).map(i=>i.name).join(" ")).toLowerCase().includes(q))
     .sort((a,b)=>a.title.localeCompare(b.title,"de"));
   if(!all.length){$("recGrid").replaceChildren(h("div",{class:"empty",style:"grid-column:1/-1"},h("b",{},"Der Katalog ist leer"),h("a",{class:"btn primary",href:"#import"},"Karten einlesen")));return;}
