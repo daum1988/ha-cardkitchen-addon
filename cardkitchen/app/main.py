@@ -23,7 +23,7 @@ from . import reader_claude, reader_local
 from .db import Store
 from .text_utils import title_from_filename
 
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 APP_DIR = Path(__file__).parent
 DATA_DIR = Path(os.environ.get("CK_DATA_DIR", "/data"))
 OPTIONS_FILE = Path(os.environ.get("CK_OPTIONS", str(DATA_DIR / "options.json")))
@@ -392,6 +392,25 @@ def _restore_data(data, z: zipfile.ZipFile | None) -> dict:
     return {"imported": n, "images": pics}
 
 
+def _restore_file(dst: Path) -> dict:
+    if zipfile.is_zipfile(dst):
+        with zipfile.ZipFile(dst) as z:
+            jsons = [i for i in z.infolist() if i.filename.lower().endswith(".json") and not i.is_dir()]
+            if not jsons:
+                raise HTTPException(400, "Im ZIP liegt keine Rezeptdatei (.json).")
+            main = min(jsons, key=lambda i: (i.filename.count("/"), "rezept" not in i.filename.lower()))
+            try:
+                data = json.loads(z.read(main))
+            except ValueError as e:
+                raise HTTPException(400, f"{main.filename} ist keine gültige Rezeptdatei.") from e
+            return _restore_data(data, z)
+    try:
+        data = json.loads(dst.read_bytes())
+    except ValueError as e:
+        raise HTTPException(400, "Keine gültige Sicherungsdatei (.json oder .zip).") from e
+    return _restore_data(data, None)
+
+
 @app.post("/api/restore")
 async def restore(file: UploadFile = File(...)):
     with tempfile.TemporaryDirectory() as td:
@@ -403,22 +422,57 @@ async def restore(file: UploadFile = File(...)):
                 if size > MAX_BACKUP:
                     raise HTTPException(413, "Sicherung ist größer als 1 GB.")
                 out.write(chunk)
-        if zipfile.is_zipfile(dst):
-            with zipfile.ZipFile(dst) as z:
-                jsons = [i for i in z.infolist() if i.filename.lower().endswith(".json") and not i.is_dir()]
-                if not jsons:
-                    raise HTTPException(400, "Im ZIP liegt keine Rezeptdatei (.json).")
-                main = min(jsons, key=lambda i: (i.filename.count("/"), "rezept" not in i.filename.lower()))
-                try:
-                    data = json.loads(z.read(main))
-                except ValueError as e:
-                    raise HTTPException(400, f"{main.filename} ist keine gültige Rezeptdatei.") from e
-                return await run_in_threadpool(_restore_data, data, z)
-        try:
-            data = json.loads(dst.read_bytes())
-        except ValueError as e:
-            raise HTTPException(400, "Keine gültige Sicherungsdatei (.json oder .zip).") from e
-        return await run_in_threadpool(_restore_data, data, None)
+        return await run_in_threadpool(_restore_file, dst)
+
+
+# Große Sicherungen stückweise hochladen: Home Assistant (Ingress) und Tunnel wie Cloudflare
+# begrenzen die Größe einzelner Anfragen.
+UPLOAD_DIR = DATA_DIR / "uploads"
+UPLOAD_ID = re.compile(r"^[a-f0-9]{16,64}$")
+MAX_CHUNK = 8 * 1024 * 1024
+
+
+def _cleanup_uploads() -> None:
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    for f in UPLOAD_DIR.glob("*.part"):
+        if time.time() - f.stat().st_mtime > 24 * 3600:
+            f.unlink(missing_ok=True)
+
+
+@app.put("/api/upload/{uid}/{index}")
+async def upload_chunk(uid: str, index: int, request: Request):
+    if not UPLOAD_ID.match(uid) or index < 0:
+        raise HTTPException(400, "Ungültiger Upload")
+    _cleanup_uploads()
+    part = UPLOAD_DIR / f"{uid}.part"
+    if index == 0:
+        part.unlink(missing_ok=True)
+    elif not part.is_file():
+        raise HTTPException(409, "Upload unterbrochen – bitte neu starten.")
+    size = part.stat().st_size if part.is_file() else 0
+    got = 0
+    with part.open("ab") as out:
+        async for chunk in request.stream():
+            got += len(chunk)
+            if got > MAX_CHUNK or size + got > MAX_BACKUP:
+                out.close()
+                part.unlink(missing_ok=True)
+                raise HTTPException(413, "Teil oder Sicherung zu groß.")
+            out.write(chunk)
+    return {"size": size + got}
+
+
+@app.post("/api/upload/{uid}/restore")
+async def restore_uploaded(uid: str):
+    if not UPLOAD_ID.match(uid):
+        raise HTTPException(400, "Ungültiger Upload")
+    part = UPLOAD_DIR / f"{uid}.part"
+    if not part.is_file():
+        raise HTTPException(404, "Upload nicht gefunden – bitte neu starten.")
+    try:
+        return await run_in_threadpool(_restore_file, part)
+    finally:
+        part.unlink(missing_ok=True)
 
 
 # ------------------------------------------------------------------ Home Assistant

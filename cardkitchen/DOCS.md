@@ -77,9 +77,8 @@ Assistant (z. B. die Einkaufsliste).
 
 Rezepte, Plan, Fotos und Originalkarten liegen ausschließlich im privaten Datenordner des Add-ons auf deinem
 Home Assistant und sind in dessen Backups enthalten. Sie sind nie Teil dieses Repositorys. Über
-**Sicherung mit Fotos (ZIP)** bekommst du zusätzlich alle Rezepte samt Fotos als Datei. Beim
-Einlesen sehr großer Sicherungen über einen Tunnel (z. B. Cloudflare, Limit 100 MB pro Anfrage) die
-JSON-Datei und den Foto-Ordner getrennt einlesen („Foto-Ordner nachladen“) oder im Heimnetz arbeiten.
+**Sicherung mit Fotos (ZIP)** bekommst du zusätzlich alle Rezepte samt Fotos als Datei. Große
+Sicherungen werden beim Einlesen automatisch in Teilen hochgeladen.
 
 Mit dem kostenlosen Leser verlässt nichts dein Netzwerk. Mit Claude wird die jeweilige Karte bzw. der
 eingefügte Text an die Anthropic-API gesendet.

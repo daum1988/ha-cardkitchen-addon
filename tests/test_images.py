@@ -86,3 +86,31 @@ def test_image_api_and_zip_roundtrip(tmp_path, monkeypatch):
 
     r = c.delete("/api/recipes/dal/image")
     assert "image" not in r.json() and r.json()["imageSource"] == "none"
+
+
+def test_chunked_restore(tmp_path, monkeypatch):
+    import importlib
+
+    monkeypatch.setenv("CK_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("CK_OPTIONS", str(tmp_path / "options.json"))
+    monkeypatch.delenv("SUPERVISOR_TOKEN", raising=False)
+    import app.main as m
+
+    importlib.reload(m)
+    from fastapi.testclient import TestClient
+
+    c = TestClient(m.app)
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("kartenkueche-rezepte.json", json.dumps({"recipes": [{"id": "dal", "title": "Dal", "image": "bilder/dal.jpg"}]}))
+        zf.writestr("bilder/dal.jpg", _jpg())
+    data = buf.getvalue()
+    uid = "ab" * 16
+    step = max(1, len(data) // 3)
+    for i, start in enumerate(range(0, len(data), step)):
+        assert c.put(f"/api/upload/{uid}/{i}", content=data[start:start + step]).status_code == 200
+    r = c.post(f"/api/upload/{uid}/restore")
+    assert r.json() == {"imported": 1, "images": 1}
+    assert not list((tmp_path / "uploads").glob("*.part"))
+    assert c.put("/api/upload/../1", content=b"x").status_code in (400, 404)
+    assert c.post(f"/api/upload/{uid}/restore").status_code == 404

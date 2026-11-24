@@ -738,9 +738,14 @@ const drop=$("drop");["dragenter","dragover"].forEach(ev=>drop.addEventListener(
 ["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("over");}));
 drop.addEventListener("drop",e=>{if(e.dataTransfer?.files?.length)addFiles([...e.dataTransfer.files]);});
 $("fileIn").onchange=e=>{addFiles([...e.target.files]);e.target.value="";};
-$("jsonIn").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;const fd=new FormData();fd.append("file",f);
+async function uploadRestore(f){if(f.size<=4*1024*1024){const fd=new FormData();fd.append("file",f);return api("restore",{method:"POST",body:fd});}
+  const uid=[...crypto.getRandomValues(new Uint8Array(16))].map(x=>x.toString(16).padStart(2,"0")).join("");const step=4*1024*1024;const n=Math.ceil(f.size/step);
+  for(let i=0;i<n;i++){$("restoreNote").textContent="Lade hoch … "+Math.round(i/n*100)+" %";
+    await api("upload/"+uid+"/"+i,{method:"PUT",headers:{"Content-Type":"application/octet-stream"},body:f.slice(i*step,(i+1)*step)});}
+  $("restoreNote").textContent="Lese Sicherung ein …";return api("upload/"+uid+"/restore",{method:"POST"});}
+$("jsonIn").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
   $("restoreNote").textContent="Lese Sicherung …";
-  try{const r=await api("restore",{method:"POST",body:fd});await loadAll();const t=r.imported+" Rezepte"+(r.images?" und "+r.images+" Fotos":"")+" eingelesen";$("restoreNote").textContent=t;toast(t);}
+  try{const r=await uploadRestore(f);await loadAll();const t=r.imported+" Rezepte"+(r.images?" und "+r.images+" Fotos":"")+" eingelesen";$("restoreNote").textContent=t;toast(t);}
   catch(err){$("restoreNote").textContent=err.status===413?"Die Datei ist für die Verbindung zu groß. Lies erst die JSON-Datei ein und lade dann den Foto-Ordner nach.":err.message;}};
 $("imgDirIn").onchange=async e=>{const files=[...e.target.files].filter(f=>/\.(jpe?g|png|webp)$/i.test(f.name)&&!/\.thumb\./i.test(f.name));e.target.value="";
   const byName=new Map();for(const r of S.recipes.values()){byName.set(r.id,r.id);if(r.image)byName.set(String(r.image).split("/").pop().replace(/\.[a-z]+$/i,""),r.id);}

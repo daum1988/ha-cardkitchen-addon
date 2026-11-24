@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+
+- Große Sicherungen (ZIP mit Fotos) werden in Teilen zu 4 MB hochgeladen. Damit klappt das Einlesen
+  auch über Home Assistant und Tunnel wie Cloudflare, die die Größe einzelner Uploads begrenzen.
+
 ## 0.2.0
 
 - Fotos der fertigen Gerichte: werden beim Einlesen automatisch aus der Karte übernommen
